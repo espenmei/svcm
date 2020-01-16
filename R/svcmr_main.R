@@ -135,7 +135,7 @@ mc <- function(form, X = NULL) {
 #' @export
 #' @param object An object of type mc/svc.
 #' @param ... Further function arguments.
-.compute <- function(object, ...) {
+.computeC <- function(object, ...) {
   UseMethod(".compute")
 }
 
@@ -145,7 +145,7 @@ mc <- function(form, X = NULL) {
 #' @param object An object of type mc.
 #' @param env Computing environment.
 #' @param ... Not used.
-.compute.mc <- function(object, env, ...) {
+.computeC.mc <- function(object, env, ...) {
   mci <- eval(object$form, env)
   mu <- as.vector(t(mci %*% t(object$X)))
   return(mu)
@@ -157,7 +157,7 @@ mc <- function(form, X = NULL) {
 #' @param object An object of type svc.
 #' @param env Computing environment.
 #' @param ... Not used.
-.compute.svc <- function(object, env, ...) {
+.computeC.svc <- function(object, env, ...) {
   vci <- eval(object$form, env)
   sigma <- vci %x% object$R
   return(sigma)
@@ -215,8 +215,8 @@ svcm <- function(Y, ...) {
   # model object and not fit object. Weird? No, should be good!
   objective <- function(env_comp) {
     # ?
-    M <- Reduce("+", lapply(mcs, svcmr::.compute, env_comp))
-    S <- Reduce("+", lapply(svcs, svcmr::.compute, env_comp))
+    M <- Reduce("+", lapply(mcs, svcmr::.computeC, env_comp))
+    S <- Reduce("+", lapply(svcs, svcmr::.computeC, env_comp))
     lS <- Matrix::Cholesky(S)
     ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
     return(-2 * ll)
