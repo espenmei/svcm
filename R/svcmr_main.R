@@ -215,8 +215,8 @@ svcm <- function(Y, ...) {
   # model object and not fit object. Weird? No, should be good!
   objective <- function(env_comp) {
     # ?
-    M <- Reduce("+", lapply(mcs, svcmr::.computeC, env_comp))
-    S <- Reduce("+", lapply(svcs, svcmr::.computeC, env_comp))
+    M <- Reduce("+", lapply(mcs, .computeC, env_comp))
+    S <- Reduce("+", lapply(svcs, .computeC, env_comp))
     lS <- Matrix::Cholesky(S)
     ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
     return(-2 * ll)
