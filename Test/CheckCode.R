@@ -4,7 +4,7 @@ library(lavaan)
 N = 100
 P = 4
 Y = matrix(rnorm(N * P), N, P)
-X = matrix::Matrix(1, N, 1)
+X = matrix(1, N, 1)
 W = matrix(rnorm(N * 2), N, 2)
 R = Matrix::Diagonal(N)
 
@@ -25,6 +25,7 @@ mod1 = svcm(Y, l, c, s, svc1, B, mc_X, A, mc_W)
 fit1 = fitm(mod1, se = T, control = list(trace = 6))
 summary(fit)
 
+as.vector(Matrix::t(B$values %*% t(X)))
 # Compute
 # --------------------------
 compute(mod1, l %*% (c %*% t(c)) %*% t(l))
