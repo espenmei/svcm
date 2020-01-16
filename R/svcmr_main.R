@@ -133,6 +133,7 @@ mc <- function(form, X = NULL) {
 #' Generic compute function.
 #' @description Internal functions used to evaluate expressions containing functions of model objects.
 #' @export
+#' @importFrom Matrix t
 #' @param object An object of type mc/svc.
 #' @param ... Further function arguments.
 .computeC <- function(object, ...) {
@@ -142,6 +143,7 @@ mc <- function(form, X = NULL) {
 #' Compute function for mc object.
 #' @description Internal function used to evaluate expressions containing functions of model objects.
 #' @export
+#' @importFrom Matrix t
 #' @param object An object of type mc.
 #' @param env Computing environment.
 #' @param ... Not used.
@@ -155,6 +157,7 @@ mc <- function(form, X = NULL) {
 #' Compute function for svc object.
 #' @description Internal function used to evaluate expressions containing functions of model objects.
 #' @export
+#' @importFrom Matrix t
 #' @param object An object of type svc.
 #' @param env Computing environment.
 #' @param ... Not used.
