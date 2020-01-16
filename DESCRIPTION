@@ -1,0 +1,20 @@
+Package: svcmr
+Title: Fit Structured Variance Component Models With Relationship Matrices
+Version: 0.1
+Authors@R: 
+    person(given = "Espen Moen",
+           family = "Eilertsen",
+           role = c("aut", "cre"),
+           email = "espeneil@outlook.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: What the package does (one paragraph).
+License: ?
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.0.2
+Imports: 
+    Matrix,
+	numDeriv,
+    sparseMVN,
+	methods,
+	stats
