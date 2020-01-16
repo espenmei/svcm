@@ -214,6 +214,7 @@ svcm <- function(Y, ...) {
   # Note that objective is now working on mvs and svcs as they were given to
   # model object and not fit object. Weird? No, should be good!
   objective <- function(env_comp) {
+    # ?
     M <- Reduce("+", lapply(mcs, svcmr::.compute, env_comp))
     S <- Reduce("+", lapply(svcs, svcmr::.compute, env_comp))
     lS <- Matrix::Cholesky(S)
