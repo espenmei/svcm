@@ -141,6 +141,7 @@ mc <- function(form, X = NULL) {
 
 #' Compute function for mc object.
 #' @description Internal function used to evaluate expressions containing functions of model objects.
+#' @export
 #' @param object An object of type mc.
 #' @param env Computing environment.
 #' @param ... Not used.
@@ -152,6 +153,7 @@ mc <- function(form, X = NULL) {
 
 #' Compute function for svc object.
 #' @description Internal function used to evaluate expressions containing functions of model objects.
+#' @export
 #' @param object An object of type svc.
 #' @param env Computing environment.
 #' @param ... Not used.
