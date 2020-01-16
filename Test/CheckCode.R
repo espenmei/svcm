@@ -4,9 +4,9 @@ library(lavaan)
 N = 100
 P = 4
 Y = matrix(rnorm(N * P), N, P)
-X = matrix(1, N, 1)
+X = matrix::Matrix(1, N, 1)
 W = matrix(rnorm(N * 2), N, 2)
-R = Diagonal(N)
+R = Matrix::Diagonal(N)
 
 # Common factors
 l = pm(4, 1, paste0("l", 1:4), c(F, T, T, T), 1, "l")
