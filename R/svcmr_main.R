@@ -136,7 +136,7 @@ mc <- function(form, X = NULL) {
 #' @param object An object of type mc/svc.
 #' @param ... Further function arguments.
 .computeC <- function(object, ...) {
-  UseMethod(".compute")
+  UseMethod(".computeC")
 }
 
 #' Compute function for mc object.
