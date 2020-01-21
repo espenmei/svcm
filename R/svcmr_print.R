@@ -46,5 +46,4 @@ print.summary.fitm <- function(x, ...) {
                  "BIC" = x$BIC)), quote = F)
   cat("\nFitted parameters:\n")
   stats::printCoefmat(x$est, digits = 3, signif.stars = FALSE, eps.Pvalue = 0.001)
-  cat("\nNumber of observations: ", nobs(x), "\n")
 }
