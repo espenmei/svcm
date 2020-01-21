@@ -1,6 +1,8 @@
 library(svcmr)
 library(lavaan)
 
+set.seed(080318)
+
 N = 100
 P = 4
 Y = matrix(rnorm(N * P), N, P)
@@ -24,8 +26,7 @@ mc_W = mc(l %*% A, X = W)
 mod1 = svcm(Y, l, c, s, svc1, B, mc_X, A, mc_W)
 fit1 = fitm(mod1, se = T, control = list(trace = 6))
 summary(fit)
-
-as.vector(Matrix::t(B$values %*% t(X)))
+fit1$time
 # Compute
 # --------------------------
 compute(mod1, l %*% (c %*% t(c)) %*% t(l))
@@ -43,3 +44,5 @@ c~ a1*w1 + a2*w2
 fit_lav = cfa(mod_lav, dat = dat_lav, meanstructure = T)
 summary(fit_lav)
 
+logLik(fit1)
+logLik(fit_lav)

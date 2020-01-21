@@ -125,7 +125,8 @@ mc <- function(form, X = NULL) {
   }
   expr <- substitute(form)
   ret <- structure(list(form = expr,
-                        X = X),
+                        X = X,
+                        Xt = t(X)),
                    class = "mc")
   return(ret)
 }
@@ -151,7 +152,7 @@ mc <- function(form, X = NULL) {
   # Use Matrix::t(object$X)) ?
   # Compute Xt ahead.
   mci <- eval(object$form, env)
-  mu <- as.vector(Matrix::t(mci %*% t(object$X)))
+  mu <- as.vector(Matrix::t(mci %*% object$Xt))
   return(mu)
 }
 
