@@ -31,7 +31,10 @@ fit1$time
 # --------------------------
 compute(mod1, l %*% (c %*% t(c)) %*% t(l))
 compute(fit1, l %*% (c %*% t(c)) %*% t(l))
-
+nobs(fit1)
+logLik(fit1)
+AIC(fit1)
+BIC(fit1)
 # Comparison lavaan
 # --------------------------
 colnames(Y) = c("v1", "v2", "v3", "v4")

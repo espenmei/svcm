@@ -33,8 +33,6 @@ compute.fitm <- function(object, form, ...) {
   return(res)
 }
 
-# Summary functions
-# -----------------------------------------
 #' Summary function for fitm objects.
 #' @description Summary function for fitm objects.
 #' @export
@@ -62,14 +60,7 @@ summary.fitm <- function(object, ...) {
   return(ret)
 }
 
-# #' Generic logLik.
-# #' @export
-# #' @param object An object of type fitm.
-# #' @param ... Not used.
-# logLik <- function(object, ...) {
-#   UseMethod("logLik")
-# }
-# Now also noba, AIC and BIC should work.
+# Now also AIC and BIC should work.
 #' Computes log-likelihood for fitm objects.
 #' @description Computes log-likelihood for fitm objects.
 #' @export
@@ -82,50 +73,6 @@ logLik.fitm <- function(object, ...) {
   class(ll) <- "logLik"
   return(ll)
 }
-
-# # Not needed?
-# #' Generic nobs.
-# #' @export
-# #' @param object fitm object.
-# #' @param ... Not used.
-# nobs <- function(object, ...) {
-#   UseMethod("nobs")
-# }
-# #' Returns number of observations used to fit model.
-# #' @description Returns number of observations used to fit model.
-# #' @export
-# #' @param object An object of type fitm.
-# #' @param ... Not used.
-# #' @return Number of observations.
-# nobs.fitm <- function(object, ...) {
-#   n <- length(object$svcm$y)
-#   return(n)
-# }
-
-# Shouldn't be nencessay to implement as loglik and nobs are imp?
-# #' Returns AIC for fitted model.
-# #' @description Returns AIC for fitted model.
-# #' @export
-# #' @param object An object of type fitm.
-# #' @param k k.
-# #' @return AIC.
-#AIC.fitm <- function(object, k = 2) {
-#  lls <- logLik(object)
-#  val <- -2 * as.numeric(lls) + k * attr(lls, "df")
-#  return(val)
-#}
-
-# #' Returns BIC for fitted model.
-# #' @description Returns BIC for fitted model.
-# #' @export
-# #' @param object An object of type fitm.
-# #' @return BIC.
-#BIC.fitm <- function(object) {
-#  lls <- logLik(object)
-#  nos <- attr(lls, "nobs")
-#  val <- -2 * as.numeric(lls) + log(nos) * attr(lls, "df")
-#  return(val)
-#}
 
 #' Returns fitted model parameters.
 #' @description Returns fitted model parameters for fitm objects.
@@ -151,8 +98,8 @@ vcov.fitm <- function(object, ...) {
   }
 }
 
-#' Anova.
-#' @description Anova.
+#' Deviance tables.
+#' @description Produce deviance tables for fitm objects.
 #' @export
 #' @param object An object of type fitm.
 #' @param ... Not used.
