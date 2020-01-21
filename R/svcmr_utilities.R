@@ -33,45 +33,14 @@ compute.fitm <- function(object, form, ...) {
   return(res)
 }
 
-# Print functions
-# -----------------------------------------
-print.svc <- function(object) {
-  dimR <- dim(object$R)
-  cat("Covariance model:\n")
-  print(object$form)
-  cat("\nDimension of R:\n")
-  cat(dimR[1], "x", dimR[2], "\n")
-  cat("\nDistinct elements in off-diagonal:")
-  if(methods::is(object$R, "ddiMatrix")) {
-    cat("\nR is diagonal")
-  } else {
-    sumR <- Matrix::summary(object$R)
-    sumROff <- table(sumR[sumR$i != sumR$j, "x"])
-    print(sumROff)
-  }
-}
-
-print.mc <- function(object) {
-  dimX <- dim(object$X)
-  cat("Mean model:\n")
-  print(object$form)
-  cat("\nDimension of X:\n")
-  cat(dimX[1], "x", dimX[2], "\n")
-}
-
-print.summary.fitm <- function(object) {
-  print(format(c("Log likelihood" = object$logl,
-                 "Deviance" = object$dev,
-                 "AIC" = object$AIC,
-                 "BIC" = object$BIC)), quote = F)
-  cat("\nFitted parameters:\n")
-  stats::printCoefmat(object$est, digits = 3, signif.stars = FALSE, eps.Pvalue = 0.001)
-  cat("\nNumber of observations: ", object$N, "\n")
-}
-
 # Summary functions
 # -----------------------------------------
-summary.fitm <- function(object) {
+#' Summary function for fitm objects.
+#' @description Summary function for fitm objects.
+#' @export
+#' @param object An object of type fitm.
+#' @param ... Not used.
+summary.fitm <- function(object, ...) {
   theta <- object$fit$par
   ses <- rep(NA, length(theta))
   if(!is.null(object$hessian)) {
@@ -93,7 +62,19 @@ summary.fitm <- function(object) {
   return(ret)
 }
 
-logLik.fitm <- function(object) {
+# #' Generic logLik.
+# #' @export
+# #' @param object An object of type fitm.
+# #' @param ... Not used.
+# logLik <- function(object, ...) {
+#   UseMethod("logLik")
+# }
+#' Computes log-likelihood for fitm objects.
+#' @description Computes log-likelihood for fitm objects.
+#' @export
+#' @param object An object of type fitm.
+#' @param ... Not used.
+logLik.fitm <- function(object, ...) {
   ll <- -0.5 * object$fit$objective
   attr(ll, "nobs") <- length(object$svcm$y)
   attr(ll, "df") <- length(object$fit$par)
@@ -101,29 +82,66 @@ logLik.fitm <- function(object) {
   return(ll)
 }
 
-nobs.fitm <- function(object) {
+#' Generic nobs.
+#' @export
+#' @param object fitm object.
+#' @param ... Not used.
+nobs <- function(object, ...) {
+  UseMethod("nobs")
+}
+#' Returns number of observations used to fit model.
+#' @description Returns number of observations used to fit model.
+#' @export
+#' @param object An object of type fitm.
+#' @param ... Not used.
+#' @return Number of observations.
+nobs.fitm <- function(object, ...) {
   n <- length(object$svcm$y)
   return(n)
 }
 
-AIC.fitm <- function(object, k = 2) {
-  lls <- logLik(object)
-  val <- -2 * as.numeric(lls) + k * attr(lls, "df")
-  return(val)
-}
+# Shouldn't be nencessay to implement?
+# #' Returns AIC for fitted model.
+# #' @description Returns AIC for fitted model.
+# #' @export
+# #' @param object An object of type fitm.
+# #' @param k k.
+# #' @return AIC.
+#AIC.fitm <- function(object, k = 2) {
+#  lls <- logLik(object)
+#  val <- -2 * as.numeric(lls) + k * attr(lls, "df")
+#  return(val)
+#}
 
-BIC.fitm <- function(object) {
-  lls <- logLik(object)
-  nos <- attr(lls, "nobs")
-  val <- -2 * as.numeric(lls) + log(nos) * attr(lls, "df")
-  return(val)
-}
+# #' Returns BIC for fitted model.
+# #' @description Returns BIC for fitted model.
+# #' @export
+# #' @param object An object of type fitm.
+# #' @return BIC.
+#BIC.fitm <- function(object) {
+#  lls <- logLik(object)
+#  nos <- attr(lls, "nobs")
+#  val <- -2 * as.numeric(lls) + log(nos) * attr(lls, "df")
+#  return(val)
+#}
 
-coef.fitm <- function(object) {
+#' Returns fitted model parameters.
+#' @description Returns fitted model parameters for fitm objects.
+#' @export
+#' @param object An object of type fitm.
+#' @param ... Not used.
+#' @return Fitted parameters.
+coef.fitm <- function(object, ...) {
   return(object$fit$par)
 }
 
-vcov.fitm <- function(object) {
+#' Returns covariance matrix of fitted model parameters.
+#' @description Returns covariance matrix of fitted model parameters for fitm objects.
+#' @export
+#' @param object An object of type fitm.
+#' @param ... Not used.
+#' @return Covariance matrix of fitted parameters.
+vcov.fitm <- function(object, ...) {
   if(is.null(object$hessian)) {
     stop("Parameter covariance matrix is not available. Try fitting model with se = TRUE.")
   } else {
@@ -131,6 +149,12 @@ vcov.fitm <- function(object) {
   }
 }
 
+#' Anova.
+#' @description Anova.
+#' @export
+#' @param object An object of type fitm.
+#' @param ... Not used.
+#' @return Anova.
 anova.fitm <- function(object, ...) {
   mNms <- sapply(sys.call()[-1], as.character)
   dots <- list(...)
@@ -146,7 +170,7 @@ anova.fitm <- function(object, ...) {
   Dfs <- vapply(logLiks, attr, FUN.VALUE = numeric(1), "df")
   chisq <- 2 * c(NA, logLiksu[1] - logLiksu[-1])
   dfChisq <- c(NA, Dfs[1] - Dfs[-1])
-  pval <- pchisq(chisq, dfChisq, lower.tail = F)
+  pval <- stats::pchisq(chisq, dfChisq, lower.tail = F)
   vals <- data.frame(Df = Dfs,
                      AIC = sapply(fits, AIC),
                      BIC = sapply(fits, BIC),
