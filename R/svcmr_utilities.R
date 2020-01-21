@@ -69,6 +69,7 @@ summary.fitm <- function(object, ...) {
 # logLik <- function(object, ...) {
 #   UseMethod("logLik")
 # }
+# Now also noba, AIC and BIC should work.
 #' Computes log-likelihood for fitm objects.
 #' @description Computes log-likelihood for fitm objects.
 #' @export
@@ -82,25 +83,26 @@ logLik.fitm <- function(object, ...) {
   return(ll)
 }
 
-#' Generic nobs.
-#' @export
-#' @param object fitm object.
-#' @param ... Not used.
-nobs <- function(object, ...) {
-  UseMethod("nobs")
-}
-#' Returns number of observations used to fit model.
-#' @description Returns number of observations used to fit model.
-#' @export
-#' @param object An object of type fitm.
-#' @param ... Not used.
-#' @return Number of observations.
-nobs.fitm <- function(object, ...) {
-  n <- length(object$svcm$y)
-  return(n)
-}
+# # Not needed?
+# #' Generic nobs.
+# #' @export
+# #' @param object fitm object.
+# #' @param ... Not used.
+# nobs <- function(object, ...) {
+#   UseMethod("nobs")
+# }
+# #' Returns number of observations used to fit model.
+# #' @description Returns number of observations used to fit model.
+# #' @export
+# #' @param object An object of type fitm.
+# #' @param ... Not used.
+# #' @return Number of observations.
+# nobs.fitm <- function(object, ...) {
+#   n <- length(object$svcm$y)
+#   return(n)
+# }
 
-# Shouldn't be nencessay to implement?
+# Shouldn't be nencessay to implement as loglik and nobs are imp?
 # #' Returns AIC for fitted model.
 # #' @description Returns AIC for fitted model.
 # #' @export

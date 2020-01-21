@@ -149,8 +149,6 @@ mc <- function(form, X = NULL) {
 #' @param env Computing environment.
 #' @param ... Not used.
 .computeC.mc <- function(object, env, ...) {
-  # Use Matrix::t(object$X)) ?
-  # Compute Xt ahead.
   mci <- eval(object$form, env)
   mu <- as.vector(Matrix::t(mci %*% object$Xt))
   return(mu)
