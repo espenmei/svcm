@@ -49,3 +49,6 @@ summary(fit_lav)
 
 logLik(fit1)
 logLik(fit_lav)
+
+vcov(fit_lav)
+round(vcov(fit1), 3)

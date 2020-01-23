@@ -16,7 +16,7 @@ print.svc <- function(x, ...) {
     cat("\nR is diagonal")
   } else {
     sumR <- Matrix::summary(x$R)
-    sumROff <- table(sumR[sumR$i != sumR$j, "x"])
+    sumROff <- table(sumR[sumR$i < sumR$j, "x"])
     print(sumROff)
   }
 }
