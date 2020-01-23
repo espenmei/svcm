@@ -2,7 +2,7 @@
 % Please edit documentation in R/svcmr_utilities.R
 \name{anova.fitm}
 \alias{anova.fitm}
-\title{Anova.}
+\title{Deviance tables.}
 \usage{
 \method{anova}{fitm}(object, ...)
 }
@@ -15,5 +15,5 @@
 Anova.
 }
 \description{
-Anova.
+Produce deviance tables for fitm objects.
 }

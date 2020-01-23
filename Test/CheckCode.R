@@ -25,13 +25,14 @@ mc_W = mc(l %*% A, X = W)
 # Combine
 mod1 = svcm(Y, l, c, s, svc1, B, mc_X, A, mc_W)
 fit1 = fitm(mod1, se = T, control = list(trace = 6))
-summary(fit)
+summary(fit1)
 fit1$time
 # Compute
 # --------------------------
 compute(mod1, l %*% (c %*% t(c)) %*% t(l))
 compute(fit1, l %*% (c %*% t(c)) %*% t(l))
-nobs(fit1)
+anova(fit1)
+
 logLik(fit1)
 AIC(fit1)
 BIC(fit1)

@@ -114,10 +114,12 @@ anova.fitm <- function(object, ...) {
   } else {
     fits <- list(object)
   }
-  nobs <- sapply(fits, nobs)
+
   logLiks <- lapply(fits, logLik)
+  nobs <- sapply(logLiks, attr, "nobs")
   logLiksu <- unlist(logLiks)
-  Dfs <- vapply(logLiks, attr, FUN.VALUE = numeric(1), "df")
+  #Dfs <- vapply(logLiks, attr, FUN.VALUE = numeric(1), "df")
+  Dfs <- sapply(logLiks, attr, "df")
   chisq <- 2 * c(NA, logLiksu[1] - logLiksu[-1])
   dfChisq <- c(NA, Dfs[1] - Dfs[-1])
   pval <- stats::pchisq(chisq, dfChisq, lower.tail = F)
