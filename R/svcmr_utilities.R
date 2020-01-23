@@ -45,9 +45,10 @@ summary.fitm <- function(object, ...) {
     ses <- sqrt(diag(vcov(object)))
   }
   zVal <- theta / ses
-  ret <- structure(list(N = nobs(object),
+  ll <- logLik(object)
+  ret <- structure(list(N = attr(ll, "nobs"),
                         K = length(theta),
-                        logl = logLik(object),
+                        logl = ll,
                         dev = object$fit$objective,
                         AIC = AIC(object),
                         BIC = BIC(object),
