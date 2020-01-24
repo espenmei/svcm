@@ -1,7 +1,7 @@
 #' Computes functions of parameters.
 #' @description Can be used to evaluate expressions containing functions of parameters.
 #' @export
-#' @param object Either a model og type svcm or a fitted model of type fitm.
+#' @param object Either a model of type svcm or a fitted model of type fitm.
 #' @param ... Further function arguments.
 compute <- function(object, ...) {
   UseMethod("compute")
