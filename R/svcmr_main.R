@@ -303,6 +303,7 @@ fitm <- function(svcm, se = FALSE, ...) {
     message("Computing standard errors.")
     #H <- optimHess(res$par, fit_objective)
     H <- numDeriv::hessian(fit_objective, fit$par)
+    dimnames(H) <- list(names(theta_start_u), names(theta_start_u))
   }
   # Update svcm object with values from solution before return.
   for (i in seq_along(svcm$mos)) {
