@@ -85,6 +85,16 @@ coef.fitm <- function(object, ...) {
   return(object$fit$par)
 }
 
+#' Returns fitted model parameters.
+#' @description Returns detailed table of model parameters for objects of class \code{summary.fitm).
+#' @export
+#' @param object An object of class summary.fitm.
+#' @param ... Not used.
+#' @return \code{data.frame} of model parameters with details.
+coef.summary.fitm <- function(object, ...) {
+  return(object$est)
+}
+
 #' Returns covariance matrix of fitted model parameters.
 #' @description Returns covariance matrix of fitted model parameters for fitm objects.
 #' @export

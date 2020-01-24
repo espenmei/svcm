@@ -2,12 +2,12 @@
 % Please edit documentation in R/svcmr_utilities.R
 \name{summary.fitm}
 \alias{summary.fitm}
-\title{Summary function for fitm objects.}
+\title{Summary function for svcmr models.}
 \usage{
 \method{summary}{fitm}(object, ...)
 }
 \arguments{
-\item{object}{An object of type fitm.}
+\item{object}{An object of type \code{fitm}.}
 
 \item{...}{Not used.}
 }

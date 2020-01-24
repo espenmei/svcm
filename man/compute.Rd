@@ -2,7 +2,7 @@
 % Please edit documentation in R/svcmr_utilities.R
 \name{compute}
 \alias{compute}
-\title{Computes functions of parameters.}
+\title{Computes functions of parameters}
 \usage{
 compute(object, ...)
 }
@@ -12,5 +12,5 @@ compute(object, ...)
 \item{...}{Further function arguments.}
 }
 \description{
-\code{compute} is a generic function for evalutatin expressions containing functions of parameters in models.
+\code{compute} is a generic function for evaluating expressions containing functions of parameters in models.
 }

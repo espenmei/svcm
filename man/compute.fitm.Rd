@@ -2,17 +2,17 @@
 % Please edit documentation in R/svcmr_utilities.R
 \name{compute.fitm}
 \alias{compute.fitm}
-\title{Computes functions of parameters in fitted model objects.}
+\title{Computes functions of parameters}
 \usage{
 \method{compute}{fitm}(object, form, ...)
 }
 \arguments{
-\item{object}{A Fitted model of type fitm.}
+\item{object}{An object of class \code{fitm}.}
 
 \item{form}{An expression to be evaluated.}
 
 \item{...}{Not used.}
 }
 \description{
-Can be used to evaluate expressions containing functions of parameters.
+Evaluates expressions containing functions of model parameters in objects of class \code{fitm}.
 }

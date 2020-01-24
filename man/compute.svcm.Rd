@@ -2,17 +2,17 @@
 % Please edit documentation in R/svcmr_utilities.R
 \name{compute.svcm}
 \alias{compute.svcm}
-\title{Computes functions of parameters in model objects.}
+\title{Computes functions of parameters}
 \usage{
 \method{compute}{svcm}(object, form, ...)
 }
 \arguments{
-\item{object}{A model of type svcm.}
+\item{object}{An object of class \code{svcm}.}
 
 \item{form}{An expression to be evaluated.}
 
 \item{...}{Not used.}
 }
 \description{
-Can be used to evaluate expressions containing functions of model objects.
+Evaluates expressions containing functions of model parameters in objects of class \code{svcm}.
 }
