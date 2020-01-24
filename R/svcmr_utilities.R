@@ -1,16 +1,16 @@
-#' Computes functions of parameters.
-#' @description Can be used to evaluate expressions containing functions of parameters.
+#' Computes functions of parameters
+#' @description \code{compute} is a generic function for evaluating expressions containing functions of parameters in models.
 #' @export
-#' @param object Either a model of type svcm or a fitted model of type fitm.
+#' @param object Either a model of type \code{svcm} or a fitted model of type \code{fitm}.
 #' @param ... Further function arguments.
 compute <- function(object, ...) {
   UseMethod("compute")
 }
 
-#' Computes functions of parameters in model objects.
-#' @description Can be used to evaluate expressions containing functions of model objects.
+#' Computes functions of parameters
+#' @description Evaluates expressions containing functions of model parameters in objects of class \code{svcm}.
 #' @export
-#' @param object A model of type svcm.
+#' @param object An object of class \code{svcm}.
 #' @param form An expression to be evaluated.
 #' @param ... Not used.
 compute.svcm <- function(object, form, ...) {
@@ -20,10 +20,10 @@ compute.svcm <- function(object, form, ...) {
   return(res)
 }
 
-#' Computes functions of parameters in fitted model objects.
-#' @description Can be used to evaluate expressions containing functions of parameters.
+#' Computes functions of parameters
+#' @description Evaluates expressions containing functions of model parameters in objects of class \code{fitm}.
 #' @export
-#' @param object A Fitted model of type fitm.
+#' @param object An object of class \code{fitm}.
 #' @param form An expression to be evaluated.
 #' @param ... Not used.
 compute.fitm <- function(object, form, ...) {
@@ -33,10 +33,10 @@ compute.fitm <- function(object, form, ...) {
   return(res)
 }
 
-#' Summary function for fitm objects.
-#' @description Summary function for fitm objects.
+#' Summary function for svcmr models.
+#' @description Summary function for class \code{"fitm"}.
 #' @export
-#' @param object An object of type fitm.
+#' @param object An object of type \code{fitm}.
 #' @param ... Not used.
 summary.fitm <- function(object, ...) {
   theta <- object$fit$par

@@ -7,10 +7,10 @@
 compute(object, ...)
 }
 \arguments{
-\item{object}{Either a model og type svcm or a fitted model of type fitm.}
+\item{object}{Either a model of type \code{svcm} or a fitted model of type \code{fitm}.}
 
 \item{...}{Further function arguments.}
 }
 \description{
-Can be used to evaluate expressions containing functions of parameters.
+\code{compute} is a generic function for evalutatin expressions containing functions of parameters in models.
 }

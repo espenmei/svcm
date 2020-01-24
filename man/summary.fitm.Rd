@@ -12,5 +12,5 @@
 \item{...}{Not used.}
 }
 \description{
-Summary function for fitm objects.
+Summary function for class \code{"fitm"}.
 }
