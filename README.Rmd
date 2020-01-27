@@ -1,8 +1,61 @@
 ---
 title: "Structured Variance Component Models with Relationship matrices"
-output: md_document
+output: html_document
 ---
 
-**svcmr** is intended for specifying models combining structural equation models with sparse relationship matrices. A relationship matrix may for example encode the genetic relatedness among individuals or different forms of shared environments. The interface is is inspired by **OpenMx**, but uses the **Matrix** and **sparseMVN** R-packages for computation. 
+**svcmr** is intended for easy specification of models combining structural equation models with sparse relationship matrices. A relationship matrix may for example encode the genetic relatedness among individuals or different forms of shared environments. The interface is inspired by **OpenMx**, but uses the **Matrix** and **sparseMVN** R-packages for computation. 
 
 ### Example code
+To illustrate the usage of the package I simulate a dataset below. First the design contains two types of pedigrees.
+```{r sim_relStruct}
+str1 <- matrix(c(1, 1/4, 1/4, 1/4, 1, 1/2, 1/4, 1/2, 1), nrow = 3, ncol = 3)
+str2 <- matrix(c(1, 1/2, 1/8, 1/8, 1/2, 1, 1/8, 1/8, 1/8, 1/8, 1, 1/2, 1/8, 1/8, 1/2, 1), nrow = 4, ncol = 4)
+R1 <- Matrix::bdiag(replicate(100, str1, simplify = FALSE))
+R2 <- Matrix::bdiag(replicate(100, str2, simplify = FALSE))
+R <- Matrix::bdiag(R1, R2)
+N <- dim(R)[1]
+Renv <- Matrix::Diagonal(N)
+```
+Then data.
+```{r sim_data}
+Ac <- MASS::mvrnorm(n = 1, mu = rep(0, N), Sigma = 2 * R)
+Ec <- rnorm(n = N, mean = 0, sd = sqrt(2))
+Y <- matrix(NA, nrow = N, ncol = 4, dimnames = list(NULL, c("y1", "y2", "y3", "y4")))
+for(n in 1:N) {
+  Y[n, ] <- rep(2, 4) + c(1, 0.5, 0.5, 0.8) * (Ac[n] + Ec[n]) + rnorm(n = 4, mean = 0, sd = 1)
+}
+```
+The above code simulates four variables from a common factor model, where the common factor is a function of additive genetic and unique envrionmental effects. This model can be specified in **svcmr** as follows.
+```{r specify_model}
+library(svcmr)
+L <- pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L")
+VAc <- pm(nrow = 1, ncol = 1, labels = "Ac1", free = T, values = 1, name = "VAc")
+VEc <- pm(nrow = 1, ncol = 1, labels = "Ec1", free = T, values = 1, name = "VEc")
+VEs <- pm(nrow = 4, ncol = 4, labels = paste0("Es", 1:16), free = c(diag(T, 4)), values = diag(1, 4), name = "VEs")
+svc1 <- svc(L %*% VAc %*% t(L), R = R)
+svc2 <- svc(L %*% VEc %*% t(L) + VEs, R = Renv)
+
+U <- pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U")
+X <- matrix(1, N, 1)
+mc1 <- mc(U, X = X)
+
+mod <- svcm(Y, L, VAc, VEc, VEs, svc1, svc2, U, X, mc1)
+fit <- fitm(mod, se = TRUE, control = list(trace = 6))
+summary(fit)
+```
+
+Equality constraints can be obtained be using the same labels for several parameters. If we want the variance of the specific factors to be constant we could do it like this
+```{r specifiy_model2}
+lab_Es <- matrix(NA, 4, 4)
+diag(lab_Es) <- "Es"
+VEs <- pm(nrow = 4, ncol = 4, labels = lab_Es, free = diag(T, 4), values = diag(1, 4), name = "VEs")
+mod2 <- svcm(Y, L, VAc, VEc, VEs, svc1, svc2, U, X, mc1)
+fit2 <- fitm(mod2, se = TRUE, control = list(trace = 6))
+summary(fit2)
+
+```
+
+```{r compare_models}
+anova(fit, fit2)
+```
+
