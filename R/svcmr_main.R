@@ -1,6 +1,3 @@
-# Relies on these
-#library(Matrix)
-#library(sparseMVN)
 
 # Used during optimization for updating model objects in computing environment.
 # Assigns values according to equal labels.
@@ -44,12 +41,7 @@ pm <- function(nrow = NA,
                values = NA,
                name = NA) {
   free_mat <- matrix(free, nrow, ncol)
-  # If values is matrix then:
-  # Warning message:
-  #  In Matrix(values, nrow, ncol, sparse = FALSE, doDiag = FALSE) :
-  #  'nrow', 'ncol', etc, are disregarded for matrix 'data'
-  # Fix?
-  values_mat <- Matrix::Matrix(values, nrow, ncol, sparse = FALSE, doDiag = FALSE)
+  values_mat <- Matrix::Matrix(c(values), nrow, ncol, sparse = FALSE, doDiag = FALSE)
   labels_mat <- matrix(labels, nrow, ncol)
   if (is.na(name)) {
     stop("All objects of type mo must have a name.")
