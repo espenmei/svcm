@@ -1,0 +1,119 @@
+---
+title: "Structured Variance Component Models with Relationship matrices"
+output: html_document
+---
+
+### Example code
+To illustrate the usage of the package I simulate a dataset below. The design contains two types of pedigrees, the first are sibling trios with one half sib and two full sibs. The second are two pair of full sibs that are cousins to each other.
+
+```{r sim_relStruct}
+# Genetic relationships
+str1 <- matrix(c(1, 1/4, 1/4, 1/4, 1, 1/2, 1/4, 1/2, 1), 3, 3)
+str2 <- matrix(c(1, 1/2, 1/8, 1/8, 1/2, 1, 1/8, 1/8, 1/8, 1/8, 1, 1/2, 1/8, 1/8, 1/2, 1), 4, 4)
+
+# Genetic relationship matrix
+Rgen <- Matrix::bdiag(Matrix::bdiag(replicate(100, str1, simplify = FALSE)),
+                      Matrix::bdiag(replicate(100, str2, simplify = FALSE)))
+```
+
+Then data can be simulated.
+```{r sim_data}
+# Number of observations
+N <- dim(Rgen)[1]
+
+# Sample genotypic values
+a <- MASS::mvrnorm(1, rep(0, N), 2 * Rgen)
+
+# Sample environmental deviations
+e <- rnorm(N, 0, sqrt(2))
+
+# Common factor
+eta = a + e
+
+# Loadings
+l <- matrix(c(1, 0.5, 0.5, 0.8), 4, 1)
+
+# Intercepts
+b = c(2, 2, 4, 4)
+
+# Data
+Y <- matrix(NA, N, 4, dimnames = list(NULL, paste0("y", 1:4)))
+for(i in 1:nrow(Y)) {
+ Y[i, ] <- b + l %*% eta[i] + rnorm(4)
+}
+```
+
+The above code simulates four variables from a common factor model, where the common factor is a function of additive genetic and unique environmental effects. The measurement model for indvidual $i$ is
+$$
+\boldsymbol{y}_i = \boldsymbol{\beta} + \boldsymbol{\lambda} \eta_i + \boldsymbol{\epsilon}_i.
+$$
+
+The structural model is
+$$
+\eta_i = a_i + e_i.
+$$
+The distribution of the individual unique factors can be described as
+$$
+\boldsymbol{\epsilon}_i \sim N(\boldsymbol{0}, \mathbf{\Theta}).
+$$
+The distribution of the individual unique environmental deviations can be described as
+$$
+e \sim N(0, \sigma^2_E).
+$$
+The genotypic values are dependent across individuals. The distribution of the genotypic values across all individuals can be described as
+$$
+\boldsymbol{a} \sim N(\boldsymbol{0}, \sigma^2_A \mathbf{R}_{gen}).
+$$
+
+This model can be specified in **svcmr** as follows.
+```{r specify_model}
+library(svcmr)
+
+# Relationship matrix for unique environmental deviations
+Renv <- Matrix::Diagonal(dim(Rgen)[1])
+
+# Covariates
+X <- matrix(1, N, 1)
+
+mod <- svcm(Y,
+            # Parameters
+            pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
+            pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
+            pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
+            pm(nrow = 4, ncol = 4, labels = paste0("th", 1:16), free = diag(T, 4), values = diag(1, 4), name = "TH"),
+            pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
+            # Variance components
+            svc(L %*% Sa %*% t(L), R = Rgen),
+            svc(L %*% Se %*% t(L) + TH, R = Renv),
+            # Mean components
+            mc(U, X = X))
+fit <- fitm(mod, se = TRUE, control = list(trace = 6))
+summary(fit)
+```
+
+Equality constraints can be obtained be using the same labels for several parameters. If we want the variance of the specific factors to be constant we could do it like this
+```{r specifiy_model2}
+lab_TH <- matrix(NA, 4, 4)
+diag(lab_TH) <- "th"
+mod2 <- svcm(Y,
+            # Parameters
+            pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
+            pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
+            pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
+            pm(nrow = 4, ncol = 4, labels = lab_TH, free = diag(T, 4), values = diag(1, 4), name = "TH"),
+            pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
+            # Variance components
+            svc(L %*% Sa %*% t(L), R = Rgen),
+            svc(L %*% Se %*% t(L) + TH, R = Renv),
+            # Mean components
+            mc(U, X = X))
+fit2 <- fitm(mod2, se = TRUE, control = list(trace = 6))
+summary(fit2)
+
+```
+
+The models can the be compared.
+```{r compare_models}
+anova(fit, fit2)
+```
+
