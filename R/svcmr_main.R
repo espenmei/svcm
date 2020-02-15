@@ -204,7 +204,7 @@ svcm <- function(...) {
   # Objective function
   # Note that objective is now working on mvs and svcs as they were given to
   # model object and not fit object. Weird? No, should be good!
-  objective <- function(env_comp) {
+  objective <- function(y, env_comp) {
     # ?
     M <- Reduce("+", lapply(mcs, .computeC, env_comp))
     S <- Reduce("+", lapply(svcs, .computeC, env_comp))
@@ -281,7 +281,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
     # Update computing environment
     lapply(svcm$mos, .UpdateValues, theta, env_comp)
     # Compute objective
-    return(svcm$objective(env_comp))
+    return(svcm$objective(y, env_comp))
   }
   # optimize model
   cat("\niteration: objective:", names(theta_start_u), "\n")
