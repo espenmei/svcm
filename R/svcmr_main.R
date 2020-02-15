@@ -2,21 +2,19 @@
 # Used during optimization for updating model objects in computing environment.
 # Assigns values according to equal labels.
 .UpdateValues <- function(mo, values, env_comp) {
-  ind_mo <- which(mo$labels %in% names(values))
-  ind_values <- charmatch(mo$labels, names(values), nomatch = 0)
   # Temp fix to avoid crashing when fixed pars are given labels.
-  ind_mo <- ind_mo[mo$free] # !?
-  ind_values <- ind_values[mo$free] # !?
-
+  # Try to write this better.
+  ind_mo <- which(mo$labels %in% names(values))[mo$free]
+  ind_values <- charmatch(mo$labels, names(values), nomatch = 0)[mo$free]
   mo$values[ind_mo] <- values[ind_values[ind_values > 0]]
   assign(mo$name, mo$values, envir = env_comp)
 }
 
-.GetFreeValues <- function(mo) {
+.getFreeValues <- function(mo) {
   return(mo$values[mo$free])
 }
 
-.GetFreeLabels <- function(mo) {
+.getFreeLabels <- function(mo) {
   return(mo$labels[mo$free])
 }
 
@@ -269,8 +267,8 @@ fitm <- function(svcm, se = FALSE, ...) {
     stop("Only objects of type svcm are accepted.")
   }
   # Set start values
-  theta_start <- unlist(lapply(svcm$mos, .GetFreeValues))
-  names(theta_start) <- unlist(lapply(svcm$mos, .GetFreeLabels))
+  theta_start <- unlist(lapply(svcm$mos, .getFreeValues))
+  names(theta_start) <- unlist(lapply(svcm$mos, .getFreeLabels))
   # Keep only one (first) when equal labels (equality constraints)
   theta_start_u <- theta_start[!duplicated(names(theta_start))]
   # Create computing environment for fitting
