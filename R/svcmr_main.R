@@ -166,7 +166,6 @@ mc <- function(form, X = NULL) {
 #' Creates a model
 #' @description Creates a new model from model, mean and variance components objects
 #' @export
-#' @param Y Data described by model.
 #' @param ... All relevant model, mean and variance components objects used to define the model.
 #' @return An object of type svcm.
 #' @examples
@@ -214,8 +213,7 @@ svcm <- function(...) {
     ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
     return(-2 * ll)
   }
-  ret <- structure(list(#y = y,
-                        mos = mos,
+  ret <- structure(list(mos = mos,
                         svcs = svcs,
                         mcs = mcs,
                         objective = objective),
@@ -226,6 +224,7 @@ svcm <- function(...) {
 #' Fit a model
 #' @description Fits a model returned from svcm.
 #' @export
+#' @param Y Data described by model.
 #' @param svcm An object of type svcm.
 #' @param se Should standard errors be computed?
 #' @param ... Arguments passed to nlminb.
@@ -300,7 +299,6 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   H <- NULL
   if (se) {
     message("Computing standard errors.")
-    #H <- optimHess(res$par, fit_objective)
     H <- numDeriv::hessian(fit_objective, fit$par)
     dimnames(H) <- list(names(theta_start_u), names(theta_start_u))
   }
@@ -308,7 +306,8 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   for (i in seq_along(svcm$mos)) {
     svcm$mos[[i]]$values <- get(svcm$mos[[i]]$name, envir = env_comp)
   }
-  ret <- structure(list(fit = fit,
+  ret <- structure(list(y = y,
+                        fit = fit,
                         hessian = H,
                         time = time_used,
                         svcm = svcm),

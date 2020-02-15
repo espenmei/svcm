@@ -69,7 +69,7 @@ summary.fitm <- function(object, ...) {
 #' @param ... Not used.
 logLik.fitm <- function(object, ...) {
   ll <- -0.5 * object$fit$objective
-  attr(ll, "nobs") <- length(object$svcm$y)
+  attr(ll, "nobs") <- length(object$y)
   attr(ll, "df") <- length(object$fit$par)
   class(ll) <- "logLik"
   return(ll)

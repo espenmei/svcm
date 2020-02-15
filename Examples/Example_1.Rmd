@@ -58,11 +58,11 @@ $$
 $$
 The distribution of the individual unique environmental deviations can be described as
 $$
-e \sim N(0, \sigma^2_E).
+e \sim N(0, \sigma^2_e).
 $$
 The genotypic values are dependent across individuals. The distribution of the genotypic values across all individuals can be described as
 $$
-\boldsymbol{a} \sim N(\boldsymbol{0}, \sigma^2_A \mathbf{R}_{gen}).
+\boldsymbol{a} \sim N(\boldsymbol{0}, \sigma^2_a \mathbf{R}_{gen}).
 $$
 
 This model can be specified in **svcmr** as follows.
@@ -94,8 +94,7 @@ Equality constraints can be obtained be using the same labels for several parame
 ```{r specifiy_model2}
 lab_TH <- matrix(NA, 4, 4)
 diag(lab_TH) <- "th"
-mod2 <- svcm(Y,
-            # Parameters
+mod2 <- svcm(# Parameters
             pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
             pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
             pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
@@ -106,7 +105,7 @@ mod2 <- svcm(Y,
             svc(L %*% Se %*% t(L) + TH, R = Renv),
             # Mean components
             mc(U, X = X))
-fit2 <- fitm(mod2, se = TRUE, control = list(trace = 6))
+fit2 <- fitm(Y, mod2, se = TRUE, control = list(trace = 6))
 summary(fit2)
 
 ```
