@@ -75,8 +75,7 @@ Renv <- Matrix::Diagonal(dim(Rgen)[1])
 # Covariates
 X <- matrix(1, N, 1)
 
-mod <- svcm(Y,
-            # Parameters
+mod <- svcm(# Parameters
             pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
             pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
             pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
@@ -87,7 +86,7 @@ mod <- svcm(Y,
             svc(L %*% Se %*% t(L) + TH, R = Renv),
             # Mean components
             mc(U, X = X))
-fit <- fitm(mod, se = TRUE, control = list(trace = 6))
+fit <- fitm(Y, mod, se = TRUE, control = list(trace = 6))
 summary(fit)
 ```
 

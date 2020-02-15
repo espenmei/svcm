@@ -4,8 +4,10 @@
 .UpdateValues <- function(mo, values, env_comp) {
   # Temp fix to avoid crashing when fixed pars are given labels.
   # Try to write this better.
-  ind_mo <- which(mo$labels %in% names(values))[mo$free]
-  ind_values <- charmatch(mo$labels, names(values), nomatch = 0)[mo$free]
+  #ind_mo <- which(mo$labels %in% names(values))[mo$free]
+  #ind_values <- charmatch(mo$labels, names(values), nomatch = 0)[mo$free]
+  ind_mo <- which(mo$labels %in% names(values))
+  ind_values <- charmatch(mo$labels, names(values), nomatch = 0)
   mo$values[ind_mo] <- values[ind_values[ind_values > 0]]
   assign(mo$name, mo$values, envir = env_comp)
 }
