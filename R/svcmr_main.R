@@ -17,16 +17,16 @@
 }
 
 #' Constructor for parameter matrix
-#' @description Creates an object of type pm used to represent parameters in a model.
+#' @description Creates an object of type \code{pm} used to represent parameters in a model.
 #' @export
 #' @param nrow Number of matrix rows.
 #' @param ncol Number of matrix columns.
-#' @param labels Vector or matrix of characters giving labels to parameters. Equal characters can be used to define equality constraints.
-#' @param values Vector or matrix with parameter values. Values for free parameters are used as starting values during optimization
+#' @param labels Vector/matrix with parameter labels. Equal characters can be used to define equality constraints.
+#' @param values Vector/matrix with parameter values. Values for free parameters are used as starting values during optimization
 #' and values for fixed parameters are constants during optimization.
 #' @param free Vector or matrix of logical values defining whether parameters are free or not.
 #' @param name Character giving name to model object.
-#' @return An object of class mo.
+#' @return An object of class \code{pm}.
 #' @examples
 #' library(svcmr)
 #' S <- pm(nrow = 2, ncol = 2,
@@ -34,17 +34,14 @@
 #'         values = c(2, 1, 1, 2),
 #'         free = TRUE,
 #'         name = "S")
-pm <- function(nrow = NA,
-               ncol = NA,
-               labels = character(),
-               free = FALSE,
-               values = NA,
-               name = NA) {
+pm <- function(nrow = NA, ncol = NA, labels = character(),
+               free = FALSE, values = NA, name = NA) {
+
   free_mat <- matrix(free, nrow, ncol)
   values_mat <- Matrix::Matrix(c(values), nrow, ncol, sparse = FALSE, doDiag = FALSE)
   labels_mat <- matrix(labels, nrow, ncol)
   if (is.na(name)) {
-    stop("All objects of type mo must have a name.")
+    stop("A name is required.")
   }
   ret <- structure(list(free = free_mat,
                         values = values_mat,
@@ -59,7 +56,7 @@ pm <- function(nrow = NA,
 #' @export
 #' @param form An expression for the covariance model.
 #' @param R A relationship matrix. Should be a sparse matrix from the Matrix package.
-#' @return An object of class svc.
+#' @return An object of class \code{svc}.
 #' @examples
 #' library(svcmr)
 #' R <- Matrix::Diagonal(100)
@@ -79,6 +76,9 @@ svc <- function(form, R = NULL) {
   if (is.null(R)) {
     stop("A relationship matrix must be supplied.")
   }
+
+  # Check for sparse Matrix class.
+
   if(!Matrix::isSymmetric(R)) {
     stop("Relationship matrix must be symmetric.")
   }
