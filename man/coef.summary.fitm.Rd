@@ -12,7 +12,7 @@
 \item{...}{Not used.}
 }
 \value{
-Table of model parameters with details.
+\code{data.frame} of model parameters with details.
 }
 \description{
 

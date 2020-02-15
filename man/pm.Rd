@@ -18,20 +18,20 @@ pm(
 
 \item{ncol}{Number of matrix columns.}
 
-\item{labels}{Vector or matrix of characters giving labels to parameters. Equal characters can be used to define equality constraints.}
+\item{labels}{Vector/matrix with parameter labels. Equal characters can be used to define equality constraints.}
 
 \item{free}{Vector or matrix of logical values defining whether parameters are free or not.}
 
-\item{values}{Vector or matrix with parameter values. Values for free parameters are used as starting values during optimization
+\item{values}{Vector/matrix with parameter values. Values for free parameters are used as starting values during optimization
 and values for fixed parameters are constants during optimization.}
 
 \item{name}{Character giving name to model object.}
 }
 \value{
-An object of class mo.
+An object of class \code{pm}.
 }
 \description{
-Creates an object of type pm used to represent parameters in a model.
+Creates an object of type \code{pm} used to represent parameters in a model.
 }
 \examples{
 library(svcmr)

@@ -12,7 +12,7 @@ svc(form, R = NULL)
 \item{R}{A relationship matrix. Should be a sparse matrix from the Matrix package.}
 }
 \value{
-An object of class svc.
+An object of class \code{svc}.
 }
 \description{
 Creates a variance component object as a function of model objects and a relationship matrix.
