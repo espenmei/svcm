@@ -191,20 +191,13 @@ mc <- function(form, X = NULL) {
 #' mc1 <- mc(form = B, X = X)
 #' Y <- matrix(rnorm(100 * 4), 100, 4)
 #' mod <- svcm(Y, L, S, vc, B, mc1)
-svcm <- function(Y, ...) {
-  if (anyNA(Y)) {
-    stop("Missing values in Y is not supported.")
-  }
-  if (!is.numeric(Y)) {
-    stop("Y must be numeric.")
-  }
-  # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
-  y = c(Y)
+svcm <- function(...) {
+
   # Extract only objects of type mo, svc or mc and ignore anything else.
-  input <- list(...)
-  mos <- input[sapply(input, inherits, "pm")]
-  svcs <- input[sapply(input, inherits, "svc")]
-  mcs <- input[sapply(input, inherits, "mc")]
+  dots <- list(...)
+  mos <- dots[sapply(dots, inherits, "pm")]
+  svcs <-dots[sapply(dots, inherits, "svc")]
+  mcs <- dots[sapply(dots, inherits, "mc")]
   if (length(mos) == 0 || length(svcs) == 0 || length(mcs) == 0) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
@@ -219,7 +212,7 @@ svcm <- function(Y, ...) {
     ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
     return(-2 * ll)
   }
-  ret <- structure(list(y = y,
+  ret <- structure(list(#y = y,
                         mos = mos,
                         svcs = svcs,
                         mcs = mcs,
@@ -262,7 +255,17 @@ svcm <- function(Y, ...) {
 #' \dontrun{
 #' fit <- fitm(mod, se = TRUE)
 #' }
-fitm <- function(svcm, se = FALSE, ...) {
+fitm <- function(Y, svcm, se = FALSE, ...) {
+
+  if (anyNA(Y)) {
+    stop("Missing values in Y is not supported.")
+  }
+  if (!is.numeric(Y)) {
+    stop("Y must be numeric.")
+  }
+  # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
+  y = c(Y)
+
   if (!inherits(svcm, "svcm")) {
     stop("Only objects of type svcm are accepted.")
   }
