@@ -10,7 +10,6 @@ To illustrate the usage of the package I simulate a dataset below. The design co
 # Genetic relationships
 str1 <- matrix(c(1, 1/4, 1/4, 1/4, 1, 1/2, 1/4, 1/2, 1), 3, 3)
 str2 <- matrix(c(1, 1/2, 1/8, 1/8, 1/2, 1, 1/8, 1/8, 1/8, 1/8, 1, 1/2, 1/8, 1/8, 1/2, 1), 4, 4)
-
 # Genetic relationship matrix
 Rgen <- Matrix::bdiag(Matrix::bdiag(replicate(100, str1, simplify = FALSE)),
                       Matrix::bdiag(replicate(100, str2, simplify = FALSE)))
@@ -20,22 +19,16 @@ Then data can be simulated.
 ```{r sim_data}
 # Number of observations
 N <- dim(Rgen)[1]
-
 # Sample genotypic values
 a <- MASS::mvrnorm(1, rep(0, N), 2 * Rgen)
-
 # Sample environmental deviations
 e <- rnorm(N, 0, sqrt(2))
-
 # Common factor
-eta = a + e
-
+eta <- a + e
 # Loadings
 l <- matrix(c(1, 0.5, 0.5, 0.8), 4, 1)
-
 # Intercepts
 b = c(2, 2, 4, 4)
-
 # Data
 Y <- matrix(NA, N, 4, dimnames = list(NULL, paste0("y", 1:4)))
 for(i in 1:nrow(Y)) {
@@ -65,7 +58,8 @@ $$
 \boldsymbol{a} \sim N(\boldsymbol{0}, \sigma^2_a \mathbf{R}_{gen}).
 $$
 
-This model can be specified in **svcmr** as follows.
+### Fit the model in **svcmr**
+The **svcmr** interface only requires that the structural equation model is specied to apply for each individual. The user must construct relationship matrices that relates to different variance components, but other than that the required arrangement of data/paremters is handled internally. The above model can be specified in **svcmr** as follows.
 ```{r specify_model}
 library(svcmr)
 
@@ -90,7 +84,7 @@ fit <- fitm(Y, mod, se = TRUE, control = list(trace = 6))
 summary(fit)
 ```
 
-Equality constraints can be obtained be using the same labels for several parameters. If we want the variance of the specific factors to be constant we could do it like this
+Equality constraints can be obtained be using the same labels for several parameters. If we want the variance of the specific factors to be constant we could do it like this.
 ```{r specifiy_model2}
 lab_TH <- matrix(NA, 4, 4)
 diag(lab_TH) <- "th"
