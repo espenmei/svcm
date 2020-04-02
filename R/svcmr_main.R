@@ -190,8 +190,7 @@ mc <- function(form, X = NULL) {
 #'         free = TRUE,
 #'         name = "B")
 #' mc1 <- mc(form = B, X = X)
-#' Y <- matrix(rnorm(100 * 4), 100, 4)
-#' mod <- svcm(Y, L, S, vc, B, mc1)
+#' mod <- svcm(L, S, vc, B, mc1)
 svcm <- function(...) {
 
   # Extract only objects of type mo, svc or mc and ignore anything else.
@@ -270,9 +269,9 @@ svcm <- function(...) {
 #'         name = "B")
 #' mc1 <- mc(form = B, X = X)
 #' Y <- matrix(rnorm(100 * 4), 100, 4)
-#' mod <- svcm(Y, L, S, vc, B, mc1)
+#' mod <- svcm(L, S, vc, B, mc1)
 #' \dontrun{
-#' fit <- fitm(mod, se = TRUE)
+#' fit <- fitm(Y, mod, se = TRUE)
 #' }
 fitm <- function(Y, svcm, se = FALSE, ...) {
 
