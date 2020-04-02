@@ -268,8 +268,8 @@ svcm <- function(...) {
 #'         free = TRUE,
 #'         name = "B")
 #' mc1 <- mc(form = B, X = X)
-#' Y <- matrix(rnorm(100 * 4), 100, 4)
 #' mod <- svcm(L, S, vc, B, mc1)
+#' Y <- matrix(rnorm(100 * 4), 100, 4)
 #' \dontrun{
 #' fit <- fitm(Y, mod, se = TRUE)
 #' }
@@ -282,6 +282,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   # Flatten Y to y and find missing
   yobj <- .prepy(Y)
   y <- yobj$y
+  missy <- yobj$missy
 
   # Set start values
   theta_start <- unlist(lapply(svcm$mos, .getFreeValues))
