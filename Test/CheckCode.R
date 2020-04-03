@@ -23,8 +23,8 @@ mc_X = mc(B, X = X)
 A = pm(1, 2, labels = paste0("a", 1:2), free = T, values = 0, name = "A")
 mc_W = mc(l %*% A, X = W)
 # Combine
-mod1 = svcm(Y, l, c, s, svc1, B, mc_X, A, mc_W)
-fit1 = fitm(mod1, se = T, control = list(trace = 6))
+mod1 = svcm(l, c, s, svc1, B, mc_X, A, mc_W)
+fit1 = fitm(Y, mod1, se = T, control = list(trace = 6))
 summary(fit1)
 
 as.vector(Matrix::t(B$values %*% t(X)))

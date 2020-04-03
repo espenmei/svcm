@@ -163,6 +163,28 @@ mc <- function(form, X = NULL) {
   return(sigma)
 }
 
+#' Generic compute function.
+#' @description Internal functions used to evaluate expressions containing functions of model objects.
+#' @export
+#' @importFrom Matrix t
+#' @param object An object of type mc/svc.
+#' @param ... Further function arguments.
+.computeCMissy <- function(object, ...) {
+  UseMethod(".computeCMissy")
+}
+
+.computeCMissy.mc <- function(object, env, missy...) {
+  mci <- eval(object$form, env)
+  mu <- as.vector(Matrix::t(mci %*% object$Xt))
+  return(mu[-missy])
+}
+
+.computeCMissy.svc <- function(object, env, missy, ...) {
+  vci <- eval(object$form, env)
+  sigma <- vci %x% object$R
+  return(sigma[-missy, -missy])
+}
+
 #' Creates a model
 #' @description Creates a new model from model, mean and variance components objects
 #' @export
@@ -204,10 +226,11 @@ svcm <- function(...) {
   # Objective function
   # Note that objective is now working on mvs and svcs as they were given to
   # model object and not fit object. Weird? No, should be good!
-  objective <- function(y, env_comp) {
+  # Just add posMiss as argument?
+  objective <- function(y, comp, env_comp, missy) {
     # ?
-    M <- Reduce("+", lapply(mcs, .computeC, env_comp))
-    S <- Reduce("+", lapply(svcs, .computeC, env_comp))
+    M <- Reduce("+", lapply(mcs, comp, env_comp, missy))
+    S <- Reduce("+", lapply(svcs, comp, env_comp, missy))
     lS <- Matrix::Cholesky(S)
     ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
     return(-2 * ll)
@@ -225,9 +248,9 @@ svcm <- function(...) {
   if (!is.numeric(Y)) {
     stop("Y must be numeric.")
   }
-  if (anyNA(Y)) {
-    stop("Missing values in Y is not supported.")
-  }
+  #if (anyNA(Y)) {
+  #  stop("Missing values in Y is not supported.")
+  #}
   # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
   y <- c(Y)
   # Find positions of missing values
@@ -242,7 +265,7 @@ svcm <- function(...) {
 #' @description Fits a model returned from svcm.
 #' @export
 #' @param Y Data described by model.
-#' @param svcm An object of type svcm.
+#' @param svcm An object of class \code{svcm}.
 #' @param se Should standard errors be computed?
 #' @param ... Arguments passed to nlminb.
 #' @return An object of class fitm.
@@ -283,6 +306,11 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   yobj <- .prepy(Y)
   y <- yobj$y
   missy <- yobj$missy
+  # Determine computeC function if missing
+  comp <- .computeC
+  if(length(missy) > 0) {
+    comp <- .computeCMissy
+  }
 
   # Set start values
   theta_start <- unlist(lapply(svcm$mos, .getFreeValues))
@@ -296,7 +324,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
     # Update computing environment
     lapply(svcm$mos, .UpdateValues, theta, env_comp)
     # Compute objective
-    return(svcm$objective(y, env_comp))
+    return(svcm$objective(y, comp, env_comp, missy))
   }
   # optimize model
   cat("\niteration: objective:", names(theta_start_u), "\n")
