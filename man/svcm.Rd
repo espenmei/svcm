@@ -4,11 +4,9 @@
 \alias{svcm}
 \title{Creates a model}
 \usage{
-svcm(Y, ...)
+svcm(...)
 }
 \arguments{
-\item{Y}{Data described by model.}
-
 \item{...}{All relevant model, mean and variance components objects used to define the model.}
 }
 \value{
@@ -39,6 +37,5 @@ B <- pm(nrow = 6, ncol = 2,
         free = TRUE,
         name = "B")
 mc1 <- mc(form = B, X = X)
-Y <- matrix(rnorm(100 * 4), 100, 4)
-mod <- svcm(Y, L, S, vc, B, mc1)
+mod <- svcm(L, S, vc, B, mc1)
 }

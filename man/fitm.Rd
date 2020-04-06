@@ -4,10 +4,12 @@
 \alias{fitm}
 \title{Fit a model}
 \usage{
-fitm(svcm, se = FALSE, ...)
+fitm(Y, svcm, se = FALSE, ...)
 }
 \arguments{
-\item{svcm}{An object of type svcm.}
+\item{Y}{Data described by model.}
+
+\item{svcm}{An object of class \code{svcm}.}
 
 \item{se}{Should standard errors be computed?}
 
@@ -41,9 +43,9 @@ B <- pm(nrow = 6, ncol = 2,
         free = TRUE,
         name = "B")
 mc1 <- mc(form = B, X = X)
+mod <- svcm(L, S, vc, B, mc1)
 Y <- matrix(rnorm(100 * 4), 100, 4)
-mod <- svcm(Y, L, S, vc, B, mc1)
 \dontrun{
-fit <- fitm(mod, se = TRUE)
+fit <- fitm(Y, mod, se = TRUE)
 }
 }

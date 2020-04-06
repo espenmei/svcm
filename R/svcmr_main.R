@@ -173,12 +173,26 @@ mc <- function(form, X = NULL) {
   UseMethod(".computeCMissy")
 }
 
-.computeCMissy.mc <- function(object, env, missy...) {
+#' Compute function for mc object.
+#' @description Internal function used to evaluate expressions containing functions of model objects.
+#' @export
+#' @importFrom Matrix t
+#' @param object An object of type mc.
+#' @param env Computing environment.
+#' @param ... Not used.
+.computeCMissy.mc <- function(object, env, missy, ...) {
   mci <- eval(object$form, env)
   mu <- as.vector(Matrix::t(mci %*% object$Xt))
   return(mu[-missy])
 }
 
+#' Compute function for svc object.
+#' @description Internal function used to evaluate expressions containing functions of model objects.
+#' @export
+#' @importFrom Matrix t
+#' @param object An object of type svc.
+#' @param env Computing environment.
+#' @param ... Not used.
 .computeCMissy.svc <- function(object, env, missy, ...) {
   vci <- eval(object$form, env)
   sigma <- vci %x% object$R
@@ -226,9 +240,7 @@ svcm <- function(...) {
   # Objective function
   # Note that objective is now working on mvs and svcs as they were given to
   # model object and not fit object. Weird? No, should be good!
-  # Just add posMiss as argument?
   objective <- function(y, comp, env_comp, missy) {
-    # ?
     M <- Reduce("+", lapply(mcs, comp, env_comp, missy))
     S <- Reduce("+", lapply(svcs, comp, env_comp, missy))
     lS <- Matrix::Cholesky(S)
@@ -243,6 +255,7 @@ svcm <- function(...) {
   return(ret)
 }
 
+#' @export
 .prepy <- function(Y) {
 
   if (!is.numeric(Y)) {
@@ -310,6 +323,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   comp <- .computeC
   if(length(missy) > 0) {
     comp <- .computeCMissy
+    y <- y[-missy]
   }
 
   # Set start values

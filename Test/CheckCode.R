@@ -1,47 +1,52 @@
 library(svcmr)
 library(lavaan)
 
-N = 100
-P = 4
-Y = matrix(rnorm(N * P), N, P)
-X = matrix(1, N, 1)
-W = matrix(rnorm(N * 2), N, 2)
-R = Matrix::Diagonal(N)
-
-# Common factors
-l = pm(4, 1, paste0("l", c(2, 2, 2, 2)), c(T, T, T, T), 1, "l")
-c = pm(1, 1, "c", T, 1, "c")
-# Specific factors
-lab_es = matrix("e", 4, 4)
-#diag(lab_es) = "e"
-s = pm(4, 4, lab_es, free = diag(T, 4), values = c(diag(2, 4)), name = "s")
-# VCs
-svc1 = svc(l %*% (c %*% t(c)) %*% t(l) + s %*% t(s), R = R)
-# Means
-B = pm(4, 1, labels = c("b1", "l2", "l2", "b4"), free = T, values = colMeans(Y), name = "B")
-mc_X = mc(B, X = X)
-A = pm(1, 2, labels = paste0("a", 1:2), free = T, values = 0, name = "A")
-mc_W = mc(l %*% A, X = W)
-# Combine
-mod1 = svcm(l, c, s, svc1, B, mc_X, A, mc_W)
-fit1 = fitm(Y, mod1, se = T, control = list(trace = 6))
-summary(fit1)
-
-as.vector(Matrix::t(B$values %*% t(X)))
-# Compute
+# Data
 # --------------------------
-compute(mod1, l %*% (c %*% t(c)) %*% t(l))
-compute(fit1, l %*% (c %*% t(c)) %*% t(l))
+N <- 100
+# Common factor
+W <- matrix(rnorm(N * 2), N, 2)
+eta <- W %*% c(2, 3) + rnorm(N, 0, sqrt(2))
+# Loadings
+l <- matrix(c(1, 0.5, 0.5, 0.8), 4, 1)
+# Intercepts
+b = c(2, 2, 4, 4)
+# Data
+Y <- matrix(NA, N, 4, dimnames = list(NULL, paste0("y", 1:4)))
+for(i in 1:nrow(Y)) {
+  Y[i, ] <- b + l %*% eta[i] + rnorm(4)
+}
+# Relationship matrix for unique environmental deviations
+Renv <- Matrix::Diagonal(N)
+# Covariates
+X <- matrix(1, N, 1)
 
-# Comparison lavaan
+Y[1:10, 1] = NA
+# svcmr
 # --------------------------
-colnames(Y) = c("v1", "v2", "v3", "v4")
-colnames(W) = c("w1", "w2")
-dat_lav = data.frame(Y, W)
-mod_lav = "
-c =~ v1 + v2 + v3 + v4
-c~ a1*w1 + a2*w2
+mod <- svcm(# Parameters
+  pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = diag(1, 4), name = "L"),
+  pm(nrow = 4, ncol = 4, labels = paste0("th", 1:16), free = diag(T, 4), values = diag(1, 4), name = "TH"),
+  pm(nrow = 1, ncol = 1, labels = paste0("p", 1), free = T, values = 1, name = "P"),
+  pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
+  pm(nrow = 1, ncol = 2, labels = paste0("w", 1:2), free = T, values = 0, name = "G"),
+  # Variance components
+  svc(L %*% P %*% t(L) + TH, R = Renv),
+  # Mean components
+  mc(U, X = X),
+  mc(L %*% G, X = W))
+fit <- fitm(Y, mod, se = T, control = list(trace = 6))
+summary(fit)
+
+# Lavaan
+# --------------------------
+dat = data.frame(Y, W)
+modl = "
+eta =~ 1*y1 + l2*y2 + l3*y3 + l4*y4
+eta ~ w1*X1 + w2*X2
 "
-fit_lav = cfa(mod_lav, dat = dat_lav, meanstructure = T)
-summary(fit_lav)
+fitl = cfa(modl, dat, meanstructure = T,  missing = "ML")
+summary(fitl)
 
+logLik(fit)
+logLik(fitl)
