@@ -15,5 +15,5 @@
 \code{data.frame} of model parameters with details.
 }
 \description{
-
+Returns detailed table of model parameters for objects of class \code{summary.fitm}.
 }

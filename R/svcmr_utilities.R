@@ -86,7 +86,7 @@ coef.fitm <- function(object, ...) {
 }
 
 #' Returns fitted model parameters.
-#' @description Returns detailed table of model parameters for objects of class \code{summary.fitm).
+#' @description Returns detailed table of model parameters for objects of class \code{summary.fitm}.
 #' @export
 #' @param object An object of class summary.fitm.
 #' @param ... Not used.

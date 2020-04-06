@@ -255,15 +255,14 @@ svcm <- function(...) {
   return(ret)
 }
 
+#' Prepare y
+#' @description Flattens Y to y and finds position of missing values
 #' @export
 .prepy <- function(Y) {
 
   if (!is.numeric(Y)) {
     stop("Y must be numeric.")
   }
-  #if (anyNA(Y)) {
-  #  stop("Missing values in Y is not supported.")
-  #}
   # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
   y <- c(Y)
   # Find positions of missing values
