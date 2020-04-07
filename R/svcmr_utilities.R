@@ -1,8 +1,8 @@
 #' Compute hessian
-#' @description Computes hessian for fitted models of type \code{fitm}.
+#' @description Computes hessian for fitted models of class \code{fitm}.
 #' @export
-#' @param object A fitted model of type \code{fitm}.
-SEm <- function(fitm) {
+#' @param object A fitted model of class \code{fitm}.
+SE <- function(fitm) {
   print(y)
   H <- numDeriv::hessian(fitm$objective, fitm$fit$par)
   dimnames(H) <- list(names(fitm$fit$par), names(fitm$fit$par))

@@ -14,7 +14,7 @@ for(i in 1:nrow(Y)) {
 }
 Renv <- Matrix::Diagonal(N)
 X <- matrix(1, N, 1)
-Y[1:10, 1] = NA
+Y[1:10, 1] = 1
 
 # svcmr
 # --------------------------

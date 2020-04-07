@@ -236,24 +236,6 @@ svcm <- function(...) {
   return(ret)
 }
 
-#' Prepare y
-#' @description Flattens Y to y and finds position of missing values
-#' @export
-.prepy <- function(Y) {
-
-  if (!is.numeric(Y)) {
-    stop("Y must be numeric.")
-  }
-  # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
-  y <- c(Y)
-  # Find positions of missing values
-  missy <- which(is.na(y))
-  ret <- list(y = y,
-              missy = missy)
-
-  return(ret)
-}
-
 #' Fit a model
 #' @description Fits a model returned from svcm.
 #' @export
@@ -295,10 +277,13 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
     stop("Only objects of type svcm are accepted.")
   }
 
-  # Flatten Y to y and find missing
-  yobj <- .prepy(Y)
-  y <- yobj$y
-  missy <- yobj$missy
+  if (!is.numeric(Y)) {
+    stop("Y must be numeric.")
+  }
+  # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
+  y <- c(Y)
+  # Find positions of missing values
+  missy <- which(is.na(y))
   if(length(missy) > 0) {
     y <- y[-missy]
   }
@@ -339,7 +324,6 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
     fit_objective <- objective_miss
   }
 
-
   # optimize model
   cat("\niteration: objective:", names(theta_start_u), "\n")
   time_start <- proc.time()
@@ -363,7 +347,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
     svcm$mos[[i]]$values <- get(svcm$mos[[i]]$name, envir = env_comp)
   }
   ret <- structure(list(y = y,
-                        objective = objective,
+                     #   objective = objective,
                         fit = fit,
                         hessian = H,
                         time = time_used,
