@@ -12,7 +12,7 @@ mc(form, X = NULL)
 \item{X}{A design matrix.}
 }
 \value{
-An object of class mc.
+An object of class \code{mc}.
 }
 \description{
 Creates a mean component object used to define (part of) the mean structure in the model.

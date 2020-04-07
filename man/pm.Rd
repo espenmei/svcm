@@ -18,7 +18,7 @@ pm(
 
 \item{ncol}{Number of matrix columns.}
 
-\item{labels}{Vector/matrix with parameter labels. Equal characters can be used to define equality constraints.}
+\item{labels}{Vector/matrix with parameter labels. Equal characters defines equality constraints.}
 
 \item{free}{Vector or matrix of logical values defining whether parameters are free or not.}
 

@@ -9,7 +9,7 @@ svc(form, R = NULL)
 \arguments{
 \item{form}{An expression for the covariance model.}
 
-\item{R}{A relationship matrix. Should be a sparse matrix from the Matrix package.}
+\item{R}{A relationship matrix. Should be a sparse matrix from the \code{Matrix} package.}
 }
 \value{
 An object of class \code{svc}.

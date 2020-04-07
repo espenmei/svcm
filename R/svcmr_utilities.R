@@ -1,13 +1,14 @@
-# #' Compute hessian
-# #' @description Computes hessian for fitted models of type \code{fitm}.
-# #' @export
-# #' @param object A fitted model of type \code{fitm}.
-#SEm <- function(fitm) {
-#  H <- numDeriv::hessian(fitm$svcm$objective, fitm$fit$par)
-#  dimnames(H) <- list(names(fitm$fit$par), names(fitm$fit$par))
-#  fitm$hessian <- H
-#  return(fitm)
-#}
+#' Compute hessian
+#' @description Computes hessian for fitted models of type \code{fitm}.
+#' @export
+#' @param object A fitted model of type \code{fitm}.
+SEm <- function(fitm) {
+  print(y)
+  H <- numDeriv::hessian(fitm$objective, fitm$fit$par)
+  dimnames(H) <- list(names(fitm$fit$par), names(fitm$fit$par))
+  fitm$hessian <- H
+  return(fitm)
+}
 
 #' Computes functions of parameters
 #' @description \code{compute} is a generic function for evaluating expressions containing functions of parameters in models.

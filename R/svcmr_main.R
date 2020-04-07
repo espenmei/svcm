@@ -1,6 +1,3 @@
-
-# Used during optimization for updating model objects in computing environment.
-# Assigns values according to equal labels.
 #.updateValues <- function(mo, values, env_comp) {
 #  ind_mo <- which(mo$labels %in% names(values))
 #  ind_values <- charmatch(mo$labels, names(values), nomatch = 0)
@@ -8,7 +5,12 @@
 #  assign(mo$name, mo$values, envir = env_comp)
 #}
 
-  # Temp fix to avoid crashing when fixed pars are given labels.
+#' Updates model objects
+#' @description Used during optimization for updating model objects in computing environment.
+#' @export
+#' @param mo model object.
+#' @param values free parameters.
+#' @param env_comp computing environment.
 .updateValues <- function(mo, values, env_comp) {
   pos_free_mo <- which(mo$free) # positions of free values in mo
   ind_values <- pmatch(mo$labels[pos_free_mo], names(values), duplicates.ok = TRUE) # Positions of pos_free_mo in values
@@ -29,7 +31,7 @@
 #' @export
 #' @param nrow Number of matrix rows.
 #' @param ncol Number of matrix columns.
-#' @param labels Vector/matrix with parameter labels. Equal characters can be used to define equality constraints.
+#' @param labels Vector/matrix with parameter labels. Equal characters defines equality constraints.
 #' @param values Vector/matrix with parameter values. Values for free parameters are used as starting values during optimization
 #' and values for fixed parameters are constants during optimization.
 #' @param free Vector or matrix of logical values defining whether parameters are free or not.
@@ -63,7 +65,7 @@ pm <- function(nrow = NA, ncol = NA, labels = character(),
 #' @description Creates a variance component object as a function of model objects and a relationship matrix.
 #' @export
 #' @param form An expression for the covariance model.
-#' @param R A relationship matrix. Should be a sparse matrix from the Matrix package.
+#' @param R A relationship matrix. Should be a sparse matrix from the \code{Matrix} package.
 #' @return An object of class \code{svc}.
 #' @examples
 #' library(svcmr)
@@ -81,11 +83,14 @@ pm <- function(nrow = NA, ncol = NA, labels = character(),
 #'         name = "S")
 #' vc <- svc(form = L %*% S %*% t(L), R = R)
 svc <- function(form, R = NULL) {
-  if (is.null(R)) {
+  if(is.null(R)) {
     stop("A relationship matrix must be supplied.")
   }
 
-  # Check for sparse Matrix class.
+  # Check for sparse Matrix class?
+  if(!inherits(R, "Matrix")) {
+    stop("R must be of class Matrix")
+  }
 
   if(!Matrix::isSymmetric(R)) {
     stop("Relationship matrix must be symmetric.")
@@ -103,7 +108,7 @@ svc <- function(form, R = NULL) {
 #' @export
 #' @param form An expression for the mean model.
 #' @param X A design matrix.
-#' @return An object of class mc.
+#' @return An object of class \code{mc}.
 #' @examples
 #' library(svcmr)
 #' X <- cbind(1, rnorm(100))
@@ -167,42 +172,6 @@ mc <- function(form, X = NULL) {
   return(sigma)
 }
 
-#' Generic compute function.
-#' @description Internal functions used to evaluate expressions containing functions of model objects.
-#' @export
-#' @importFrom Matrix t
-#' @param object An object of type mc/svc.
-#' @param ... Further function arguments.
-.computeCMissy <- function(object, ...) {
-  UseMethod(".computeCMissy")
-}
-
-#' Compute function for mc object.
-#' @description Internal function used to evaluate expressions containing functions of model objects.
-#' @export
-#' @importFrom Matrix t
-#' @param object An object of type mc.
-#' @param env Computing environment.
-#' @param ... Not used.
-.computeCMissy.mc <- function(object, env, missy, ...) {
-  mci <- eval(object$form, env)
-  mu <- as.vector(Matrix::t(mci %*% object$Xt))
-  return(mu[-missy])
-}
-
-#' Compute function for svc object.
-#' @description Internal function used to evaluate expressions containing functions of model objects.
-#' @export
-#' @importFrom Matrix t
-#' @param object An object of type svc.
-#' @param env Computing environment.
-#' @param ... Not used.
-.computeCMissy.svc <- function(object, env, missy, ...) {
-  vci <- eval(object$form, env)
-  sigma <- vci %x% object$R
-  return(sigma[-missy, -missy])
-}
-
 #' Creates a model
 #' @description Creates a new model from model, mean and variance components objects
 #' @export
@@ -241,20 +210,28 @@ svcm <- function(...) {
   if (length(mos) == 0 || length(svcs) == 0 || length(mcs) == 0) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
-  # Objective function
-  # Note that objective is now working on mvs and svcs as they were given to
-  # model object and not fit object. Weird? No, should be good!
-  objective <- function(y, comp, env_comp, missy) {
-    M <- Reduce("+", lapply(mcs, comp, env_comp, missy))
-    S <- Reduce("+", lapply(svcs, comp, env_comp, missy))
-    lS <- Matrix::Cholesky(S)
-    ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
-    return(-2 * ll)
+
+  # Compute expectations for normal distribution
+  expectation <- function(env_comp) {
+    M <- Reduce("+", lapply(mcs, .computeC, env_comp))
+    S <- Reduce("+", lapply(svcs, .computeC, env_comp))
+    return(list(M = M,
+                S = S))
   }
+
+  # Objective function
+#  objective <- function(y, comp, env_comp, missy) {
+#    M <- Reduce("+", lapply(mcs, comp, env_comp, missy))
+#    S <- Reduce("+", lapply(svcs, comp, env_comp, missy))
+#    lS <- Matrix::Cholesky(S)
+#    ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
+#    return(-2 * ll)
+#  }
   ret <- structure(list(mos = mos,
                         svcs = svcs,
                         mcs = mcs,
-                        objective = objective),
+ #                       objective = objective,
+                        expectation = expectation),
                    class = "svcm")
   return(ret)
 }
@@ -284,7 +261,7 @@ svcm <- function(...) {
 #' @param svcm An object of class \code{svcm}.
 #' @param se Should standard errors be computed?
 #' @param ... Arguments passed to nlminb.
-#' @return An object of class fitm.
+#' @return An object of class \code{fitm}.
 #' @examples
 #' library(svcmr)
 #' R <- Matrix::Diagonal(100)
@@ -322,10 +299,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   yobj <- .prepy(Y)
   y <- yobj$y
   missy <- yobj$missy
-  # Determine computeC function if missing
-  comp <- .computeC
   if(length(missy) > 0) {
-    comp <- .computeCMissy
     y <- y[-missy]
   }
 
@@ -337,12 +311,35 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   # Create computing environment for fitting
   env_comp <- new.env()
   # Fitting function
-  fit_objective <- function(theta) {
-    # Update computing environment
+  #  fit_objective <- function(theta) {
+  #    # Update computing environment
+  #    lapply(svcm$mos, .updateValues, theta, env_comp)
+  #    # Compute objective
+  #    return(svcm$objective(y, comp, env_comp, missy))
+  #  }
+
+  objective <- function(theta) {
     lapply(svcm$mos, .updateValues, theta, env_comp)
-    # Compute objective
-    return(svcm$objective(y, comp, env_comp, missy))
+    exp <- svcm$expectation(env_comp)
+    lS <- Matrix::Cholesky(exp$S)
+    ll <- sparseMVN::dmvn.sparse(y, exp$M, CH = lS, prec = FALSE)
+    return(-2 * ll)
   }
+
+  objective_miss <- function(theta) {
+    lapply(svcm$mos, .updateValues, theta, env_comp)
+    exp <- svcm$expectation(env_comp)
+    lS <- Matrix::Cholesky(exp$S[-missy, -missy])
+    ll <- sparseMVN::dmvn.sparse(y, exp$M[-missy], CH = lS, prec = FALSE)
+    return(-2 * ll)
+  }
+
+  fit_objective <- objective
+  if(length(missy) > 0) {
+    fit_objective <- objective_miss
+  }
+
+
   # optimize model
   cat("\niteration: objective:", names(theta_start_u), "\n")
   time_start <- proc.time()
@@ -366,6 +363,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
     svcm$mos[[i]]$values <- get(svcm$mos[[i]]$name, envir = env_comp)
   }
   ret <- structure(list(y = y,
+                        objective = objective,
                         fit = fit,
                         hessian = H,
                         time = time_used,

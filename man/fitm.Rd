@@ -16,7 +16,7 @@ fitm(Y, svcm, se = FALSE, ...)
 \item{...}{Arguments passed to nlminb.}
 }
 \value{
-An object of class fitm.
+An object of class \code{fitm}.
 }
 \description{
 Fits a model returned from svcm.
