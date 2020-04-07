@@ -1,15 +1,19 @@
 
 # Used during optimization for updating model objects in computing environment.
 # Assigns values according to equal labels.
-.UpdateValues <- function(mo, values, env_comp) {
+#.updateValues <- function(mo, values, env_comp) {
+#  ind_mo <- which(mo$labels %in% names(values))
+#  ind_values <- charmatch(mo$labels, names(values), nomatch = 0)
+#  mo$values[ind_mo] <- values[ind_values[ind_values > 0]]
+#  assign(mo$name, mo$values, envir = env_comp)
+#}
+
   # Temp fix to avoid crashing when fixed pars are given labels.
-  # Try to write this better.
-  #ind_mo <- which(mo$labels %in% names(values))[mo$free]
-  #ind_values <- charmatch(mo$labels, names(values), nomatch = 0)[mo$free]
-  ind_mo <- which(mo$labels %in% names(values))
-  ind_values <- charmatch(mo$labels, names(values), nomatch = 0)
-  mo$values[ind_mo] <- values[ind_values[ind_values > 0]]
-  assign(mo$name, mo$values, envir = env_comp)
+.updateValues <- function(mo, values, env_comp) {
+  pos_free_mo <- which(mo$free) # positions of free values in mo
+  ind_values <- pmatch(mo$labels[pos_free_mo], names(values), duplicates.ok = TRUE) # Positions of pos_free_mo in values
+  mo$values[pos_free_mo] <- values[ind_values] # Update mo
+  assign(mo$name, mo$values, envir = env_comp) # update environment
 }
 
 .getFreeValues <- function(mo) {
@@ -335,7 +339,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   # Fitting function
   fit_objective <- function(theta) {
     # Update computing environment
-    lapply(svcm$mos, .UpdateValues, theta, env_comp)
+    lapply(svcm$mos, .updateValues, theta, env_comp)
     # Compute objective
     return(svcm$objective(y, comp, env_comp, missy))
   }
