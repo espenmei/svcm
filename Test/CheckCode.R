@@ -14,7 +14,7 @@ for(i in 1:nrow(Y)) {
 }
 Renv <- Matrix::Diagonal(N)
 X <- matrix(1, N, 1)
-Y[1:10, 1] = 1
+Y[1:10, 1] = NA
 
 # svcmr
 # --------------------------
@@ -30,7 +30,7 @@ mod <- svcm(pm(4, 1, paste0("l", 1:4), c(F, T, T, T), diag(1, 4), "L"),
             svc(L %*% P %*% t(L) + TH, R = Renv),
             mc(U, X = X),
             mc(L %*% G, X = W))
-fit <- fitm(Y, mod, se = T, control = list(trace = 6))
+fit <- fitm(Y, mod, se = T, control = list(trace = 1))
 summary(fit)
 
 lab_free = c(paste0("l", 1:4)[c(F, T, T, T)],

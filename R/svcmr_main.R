@@ -204,10 +204,10 @@ svcm <- function(...) {
 
   # Extract only objects of type mo, svc or mc and ignore anything else.
   dots <- list(...)
-  mos <- dots[sapply(dots, inherits, "pm")]
+  pms <- dots[sapply(dots, inherits, "pm")]
   svcs <-dots[sapply(dots, inherits, "svc")]
   mcs <- dots[sapply(dots, inherits, "mc")]
-  if (length(mos) == 0 || length(svcs) == 0 || length(mcs) == 0) {
+  if (length(pms) == 0 || length(svcs) == 0 || length(mcs) == 0) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
 
@@ -227,7 +227,7 @@ svcm <- function(...) {
 #    ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
 #    return(-2 * ll)
 #  }
-  ret <- structure(list(mos = mos,
+  ret <- structure(list(pms = pms,
                         svcs = svcs,
                         mcs = mcs,
  #                       objective = objective,
@@ -280,50 +280,36 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   if (!is.numeric(Y)) {
     stop("Y must be numeric.")
   }
+
+  fit_objective <- function(theta) {
+    lapply(svcm$pms, .updateValues, theta, env_comp)
+    exp <- svcm$expectation(env_comp)
+    return(.objective(y, exp$M, exp$S))
+  }
+
+  fit_objective_miss <- function(theta) {
+    lapply(svcm$pms, .updateValues, theta, env_comp)
+    exp <- svcm$expectation(env_comp)
+    return(.objective(y, exp$M[-missy], exp$S[-missy, -missy]))
+  }
+
   # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
   y <- c(Y)
   # Find positions of missing values
   missy <- which(is.na(y))
+  fit_objective <- fit_objective
   if(length(missy) > 0) {
     y <- y[-missy]
+    fit_objective <- fit_objective_miss
   }
 
   # Set start values
-  theta_start <- unlist(lapply(svcm$mos, .getFreeValues))
-  names(theta_start) <- unlist(lapply(svcm$mos, .getFreeLabels))
+  theta_start <- unlist(lapply(svcm$pms, .getFreeValues))
+  names(theta_start) <- unlist(lapply(svcm$pms, .getFreeLabels))
   # Keep only one (first) when equal labels (equality constraints)
   theta_start_u <- theta_start[!duplicated(names(theta_start))]
   # Create computing environment for fitting
   env_comp <- new.env()
-  # Fitting function
-  #  fit_objective <- function(theta) {
-  #    # Update computing environment
-  #    lapply(svcm$mos, .updateValues, theta, env_comp)
-  #    # Compute objective
-  #    return(svcm$objective(y, comp, env_comp, missy))
-  #  }
-
-  objective <- function(theta) {
-    lapply(svcm$mos, .updateValues, theta, env_comp)
-    exp <- svcm$expectation(env_comp)
-    lS <- Matrix::Cholesky(exp$S)
-    ll <- sparseMVN::dmvn.sparse(y, exp$M, CH = lS, prec = FALSE)
-    return(-2 * ll)
-  }
-
-  objective_miss <- function(theta) {
-    lapply(svcm$mos, .updateValues, theta, env_comp)
-    exp <- svcm$expectation(env_comp)
-    lS <- Matrix::Cholesky(exp$S[-missy, -missy])
-    ll <- sparseMVN::dmvn.sparse(y, exp$M[-missy], CH = lS, prec = FALSE)
-    return(-2 * ll)
-  }
-
-  fit_objective <- objective
-  if(length(missy) > 0) {
-    fit_objective <- objective_miss
-  }
-
   # optimize model
   cat("\niteration: objective:", names(theta_start_u), "\n")
   time_start <- proc.time()
@@ -337,21 +323,34 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
 
   # Hessian at minimum
   H <- NULL
-  if (se) {
+  if(se) {
     message("Computing standard errors.")
     H <- numDeriv::hessian(fit_objective, fit$par)
     dimnames(H) <- list(names(theta_start_u), names(theta_start_u))
   }
   # Update svcm object with values from solution before return.
-  for (i in seq_along(svcm$mos)) {
-    svcm$mos[[i]]$values <- get(svcm$mos[[i]]$name, envir = env_comp)
+  for (i in seq_along(svcm$pms)) {
+    svcm$pms[[i]]$values <- get(svcm$pms[[i]]$name, envir = env_comp)
   }
   ret <- structure(list(y = y,
-                     #   objective = objective,
+                        objective = fit_objective,
                         fit = fit,
                         hessian = H,
                         time = time_used,
                         svcm = svcm),
                    class = "fitm")
   return(ret)
+}
+
+#' Objective function
+#' @description Objetive function form multivariate normal
+#' @export
+#' @param y Data vector.
+#' @param M Mean vector.
+#' @param S Covariance matrix.
+#' @return Twice negative log likelihood.
+.objective <- function(y, M, S) {
+  lS <- Matrix::Cholesky(S)
+  ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
+  return(-2 * ll)
 }

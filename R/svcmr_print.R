@@ -1,5 +1,3 @@
-# Print functions
-
 #' Print function for svc objects.
 #' @description Print function for svc objects.
 #' @export

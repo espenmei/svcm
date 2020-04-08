@@ -26,8 +26,8 @@ compute <- function(object, ...) {
 #' @param form An expression to be evaluated.
 #' @param ... Not used.
 compute.svcm <- function(object, form, ...) {
-  en <- lapply(object$mos, "[[", "values")
-  names(en) <- lapply(object$mos, "[[", "name")
+  en <- lapply(object$pms, "[[", "values")
+  names(en) <- lapply(object$pms, "[[", "name")
   res <- eval(substitute(form), envir = en)
   return(res)
 }
@@ -39,8 +39,8 @@ compute.svcm <- function(object, form, ...) {
 #' @param form An expression to be evaluated.
 #' @param ... Not used.
 compute.fitm <- function(object, form, ...) {
-  en <- lapply(object$svcm$mos, "[[", "values")
-  names(en) <- lapply(object$svcm$mos, "[[", "name")
+  en <- lapply(object$svcm$pms, "[[", "values")
+  names(en) <- lapply(object$svcm$pms, "[[", "name")
   res <- eval(substitute(form), envir = en)
   return(res)
 }
