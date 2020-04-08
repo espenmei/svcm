@@ -1,10 +1,3 @@
-#.updateValues <- function(mo, values, env_comp) {
-#  ind_mo <- which(mo$labels %in% names(values))
-#  ind_values <- charmatch(mo$labels, names(values), nomatch = 0)
-#  mo$values[ind_mo] <- values[ind_values[ind_values > 0]]
-#  assign(mo$name, mo$values, envir = env_comp)
-#}
-
 #' Updates model objects
 #' @description Used during optimization for updating model objects in computing environment.
 #' @export
@@ -86,18 +79,13 @@ svc <- function(form, R = NULL) {
   if(is.null(R)) {
     stop("A relationship matrix must be supplied.")
   }
-
-  # Check for sparse Matrix class?
   if(!inherits(R, "Matrix")) {
     stop("R must be of class Matrix")
   }
-
   if(!Matrix::isSymmetric(R)) {
     stop("Relationship matrix must be symmetric.")
   }
-  #expr <- enexpr(form) # Turn the covariance formula into an expression. quote?
-  expr <- substitute(form)
-  ret <- structure(list(form = expr,
+  ret <- structure(list(form = substitute(form),
                         R = R),
                    class = "svc")
   return(ret)
@@ -128,8 +116,7 @@ mc <- function(form, X = NULL) {
   if (!is.numeric(X)) {
     stop("X must be numeric.")
   }
-  expr <- substitute(form)
-  ret <- structure(list(form = expr,
+  ret <- structure(list(form = substitute(form),
                         X = X,
                         Xt = t(X)),
                    class = "mc")
@@ -201,7 +188,6 @@ mc <- function(form, X = NULL) {
 #' mc1 <- mc(form = B, X = X)
 #' mod <- svcm(L, S, vc, B, mc1)
 svcm <- function(...) {
-
   # Extract only objects of type mo, svc or mc and ignore anything else.
   dots <- list(...)
   pms <- dots[sapply(dots, inherits, "pm")]
@@ -210,7 +196,6 @@ svcm <- function(...) {
   if (length(pms) == 0 || length(svcs) == 0 || length(mcs) == 0) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
-
   # Compute expectations for normal distribution
   expectation <- function(env_comp) {
     M <- Reduce("+", lapply(mcs, .computeC, env_comp))
@@ -218,15 +203,6 @@ svcm <- function(...) {
     return(list(M = M,
                 S = S))
   }
-
-  # Objective function
-#  objective <- function(y, comp, env_comp, missy) {
-#    M <- Reduce("+", lapply(mcs, comp, env_comp, missy))
-#    S <- Reduce("+", lapply(svcs, comp, env_comp, missy))
-#    lS <- Matrix::Cholesky(S)
-#    ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
-#    return(-2 * ll)
-#  }
   ret <- structure(list(pms = pms,
                         svcs = svcs,
                         mcs = mcs,
@@ -272,11 +248,9 @@ svcm <- function(...) {
 #' fit <- fitm(Y, mod, se = TRUE)
 #' }
 fitm <- function(Y, svcm, se = FALSE, ...) {
-
   if (!inherits(svcm, "svcm")) {
     stop("Only objects of type svcm are accepted.")
   }
-
   if (!is.numeric(Y)) {
     stop("Y must be numeric.")
   }
@@ -325,18 +299,20 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   H <- NULL
   if(se) {
     message("Computing standard errors.")
-    H <- numDeriv::hessian(fit_objective, fit$par)
-    dimnames(H) <- list(names(theta_start_u), names(theta_start_u))
+    H <-compHess(fit_objective, fit$par)
+    #H <- numDeriv::hessian(fit_objective, fit$par)
+    #dimnames(H) <- list(names(theta_start_u), names(theta_start_u))
   }
   # Update svcm object with values from solution before return.
   for (i in seq_along(svcm$pms)) {
     svcm$pms[[i]]$values <- get(svcm$pms[[i]]$name, envir = env_comp)
   }
   ret <- structure(list(y = y,
-                        objective = fit_objective,
+                        fit_objective = fit_objective,
                         fit = fit,
                         hessian = H,
                         time = time_used,
+                        env_comp = env_comp,
                         svcm = svcm),
                    class = "fitm")
   return(ret)
@@ -353,4 +329,17 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   lS <- Matrix::Cholesky(S)
   ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
   return(-2 * ll)
+}
+
+#' Compute hessian
+#' @description Computes hessian
+#' @export
+#' @param fit_objective Function returned from \code{fitm} defining the objective function.
+#' @param par Parameter vector.
+#' @param ... Arguments passed to \code{numDeriv::hessian}.
+#' @return Hessian matrix.
+compHess <- function(fit_objective, par, ...) {
+  H <- numDeriv::hessian(fit_objective, par, ...)
+  dimnames(H) <- list(names(par), names(par))
+  return(H)
 }

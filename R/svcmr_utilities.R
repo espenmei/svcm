@@ -1,14 +1,3 @@
-#' Compute hessian
-#' @description Computes hessian for fitted models of class \code{fitm}.
-#' @export
-#' @param object A fitted model of class \code{fitm}.
-SE <- function(fitm) {
-  print(y)
-  H <- numDeriv::hessian(fitm$objective, fitm$fit$par)
-  dimnames(H) <- list(names(fitm$fit$par), names(fitm$fit$par))
-  fitm$hessian <- H
-  return(fitm)
-}
 
 #' Computes functions of parameters
 #' @description \code{compute} is a generic function for evaluating expressions containing functions of parameters in models.
