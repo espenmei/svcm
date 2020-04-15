@@ -142,7 +142,7 @@ mc <- function(form, X = NULL) {
 #' @param ... Not used.
 .computeC.mc <- function(object, env, ...) {
   mci <- eval(object$form, env)
-  mu <- as.vector(Matrix::t(mci %*% object$Xt))
+  mu <- as.vector(Matrix::t(mci %*% object$Xt)) # Vec(t(B %*% t(X)))
   return(mu)
 }
 
@@ -158,6 +158,11 @@ mc <- function(form, X = NULL) {
   sigma <- vci %x% object$R
   return(sigma)
 }
+
+#.computeC.svc.free <- function(object, env, ...) {
+#  sigma <- eval(object$form, env)
+#  return(sigma)
+#}
 
 #' Creates a model
 #' @description Creates a new model from model, mean and variance components objects
