@@ -2,7 +2,7 @@
 % Please edit documentation in R/svcmr_main.R
 \name{.computeC.mc}
 \alias{.computeC.mc}
-\title{Compute function for mc object.}
+\title{Compute function for mc object}
 \usage{
 \method{.computeC}{mc}(object, env, ...)
 }

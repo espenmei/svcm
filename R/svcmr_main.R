@@ -54,6 +54,23 @@ pm <- function(nrow = NA, ncol = NA, labels = character(),
   return(ret)
 }
 
+
+#svc <- function(form, R = NULL) {
+#  if(is.null(R)) {
+#    stop("A relationship matrix must be supplied.")
+#  }
+#  if(!inherits(R, "Matrix")) {
+#    stop("R must be of class Matrix")
+#  }
+#  if(!Matrix::isSymmetric(R)) {
+#    stop("Relationship matrix must be symmetric.")
+#  }
+#  ret <- structure(list(form = substitute(form),
+#                        R = R),
+#                   class = "svc")
+#  return(ret)
+#}
+
 #' Constructor for variance component object
 #' @description Creates a variance component object as a function of model objects and a relationship matrix.
 #' @export
@@ -77,19 +94,25 @@ pm <- function(nrow = NA, ncol = NA, labels = character(),
 #' vc <- svc(form = L %*% S %*% t(L), R = R)
 svc <- function(form, R = NULL) {
   if(is.null(R)) {
-    stop("A relationship matrix must be supplied.")
+    ret <- .new_freesvc(form = substitute(form))
+  } else {
+    stopifnot(inherits(R, "Matrix"), Matrix::isSymmetric(R))
+    ret <- .new_fixedsvc(form = substitute(form), R = R)
   }
-  if(!inherits(R, "Matrix")) {
-    stop("R must be of class Matrix")
-  }
-  if(!Matrix::isSymmetric(R)) {
-    stop("Relationship matrix must be symmetric.")
-  }
-  ret <- structure(list(form = substitute(form),
-                        R = R),
-                   class = "svc")
   return(ret)
 }
+.new_svc <- function(..., class = character()) {
+  ret <- structure(list(...),
+                   class = c(class, "svc"))
+  return(ret)
+}
+.new_fixedsvc <- function(form, R) {
+  .new_svc(form = form, R = R, class = "fixed")
+}
+.new_freesvc <- function(form) {
+  .new_svc(form = form, class = "free")
+}
+
 
 #' Constructor for mean component object
 #' @description Creates a mean component object used to define (part of) the mean structure in the model.
@@ -123,7 +146,7 @@ mc <- function(form, X = NULL) {
   return(ret)
 }
 
-#' Generic compute function.
+#' Generic compute function
 #' @description Internal functions used to evaluate expressions containing functions of model objects.
 #' @export
 #' @importFrom Matrix t
@@ -133,7 +156,7 @@ mc <- function(form, X = NULL) {
   UseMethod(".computeC")
 }
 
-#' Compute function for mc object.
+#' Compute function for mc object
 #' @description Internal function used to evaluate expressions containing functions of model objects.
 #' @export
 #' @importFrom Matrix t
@@ -146,23 +169,40 @@ mc <- function(form, X = NULL) {
   return(mu)
 }
 
-#' Compute function for svc object.
-#' @description Internal function used to evaluate expressions containing functions of model objects.
+# #' Compute function for svc object.
+# #' @description Internal function used to evaluate expressions containing functions of model objects.
+# #' @export
+# #' @param object An object of type svc.
+# #' @param env Computing environment.
+# #' @param ... Not used.
+#.computeC.svc <- function(object, env, ...) {
+#  vci <- eval(object$form, env)
+#  sigma <- vci %x% object$R
+#  return(sigma)
+#}
+
+#' Compute function for svc objects
+#' @description Internal function used to evaluate expressions containing objects of type svc and fixed.
 #' @export
-#' @importFrom Matrix t
 #' @param object An object of type svc.
 #' @param env Computing environment.
 #' @param ... Not used.
-.computeC.svc <- function(object, env, ...) {
+.computeC.fixed <- function(object, env, ...) {
   vci <- eval(object$form, env)
   sigma <- vci %x% object$R
   return(sigma)
 }
 
-#.computeC.svc.free <- function(object, env, ...) {
-#  sigma <- eval(object$form, env)
-#  return(sigma)
-#}
+#' Compute function for svc object.
+#' @description Internal function used to evaluate expressions containing objects of type svc and free.
+#' @export
+#' @param object An object of type svc.
+#' @param env Computing environment.
+#' @param ... Not used.
+.computeC.free <- function(object, env, ...) {
+  sigma <- eval(object$form, env)
+  return(sigma)
+}
 
 #' Creates a model
 #' @description Creates a new model from model, mean and variance components objects
@@ -211,7 +251,7 @@ svcm <- function(...) {
   ret <- structure(list(pms = pms,
                         svcs = svcs,
                         mcs = mcs,
- #                       objective = objective,
+                        #                       objective = objective,
                         expectation = expectation),
                    class = "svcm")
   return(ret)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/svcmr_main.R
 \name{.computeC}
 \alias{.computeC}
-\title{Generic compute function.}
+\title{Generic compute function}
 \usage{
 .computeC(object, ...)
 }
