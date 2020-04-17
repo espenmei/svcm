@@ -32,7 +32,7 @@ mod <- svcm(pm(4, 1, paste0("l", 1:4), c(F, T, T, T), diag(1, 4), "L"),
             mc(L %*% G, X = W))
 fit <- fitm(Y, mod, se = F, control = list(trace = 6))
 summary(fit)
-fit$hessian <- compHess(fit$fit_objective, fit$fit$par)
+#fit$hessian <- compHess(fit$fit_objective, fit$fit$par)
 
 
 lab_free = c(paste0("l", 1:4)[c(F, T, T, T)],

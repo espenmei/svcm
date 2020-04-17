@@ -14,5 +14,5 @@
 \item{...}{Not used.}
 }
 \description{
-Internal function used to evaluate expressions containing objects of type svc and free.
+Internal function used to evaluate expressions containing objects of type \code{free}.
 }

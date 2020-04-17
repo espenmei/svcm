@@ -72,7 +72,7 @@ pm <- function(nrow = NA, ncol = NA, labels = character(),
 #}
 
 #' Constructor for variance component object
-#' @description Creates a variance component object as a function of model objects and a relationship matrix.
+#' @description Creates a variance component object as a function of model objects and (optionally) a relationship matrix.
 #' @export
 #' @param form An expression for the covariance model.
 #' @param R A relationship matrix. Should be a sparse matrix from the \code{Matrix} package.
@@ -107,12 +107,11 @@ svc <- function(form, R = NULL) {
   return(ret)
 }
 .new_fixedsvc <- function(form, R) {
-  .new_svc(form = form, R = R, class = "fixed")
+  .new_svc(form = form, R = R, class = "fixedsvc")
 }
 .new_freesvc <- function(form) {
   .new_svc(form = form, class = "free")
 }
-
 
 #' Constructor for mean component object
 #' @description Creates a mean component object used to define (part of) the mean structure in the model.
@@ -129,21 +128,41 @@ svc <- function(form, R = NULL) {
 #'         free = TRUE,
 #'         name = "B")
 #' mc <- mc(form = B, X = X)
+#mc <- function(form, X = NULL) {
+#  if (is.null(X)) {
+#    stop("A design matrix must be supplied.")
+#  }
+#  if (anyNA(X)) {
+#    stop("Missing values in X is not allowed.")
+#  }
+#  if (!is.numeric(X)) {
+#    stop("X must be numeric.")
+#  }
+#  ret <- structure(list(form = substitute(form),
+#                        X = X,
+#                        Xt = t(X)),
+#                   class = "mc")
+#  return(ret)
+#}
 mc <- function(form, X = NULL) {
-  if (is.null(X)) {
-    stop("A design matrix must be supplied.")
+  if(is.null(X)) {
+    ret <- .new_freemc(form = substitute(form))
+  } else {
+    stopifnot(!anyNA(X), is.numeric(X))
+    ret <- .new_fixedmc(form = substitute(form), X = X)
   }
-  if (anyNA(X)) {
-    stop("Missing values in X is not allowed.")
-  }
-  if (!is.numeric(X)) {
-    stop("X must be numeric.")
-  }
-  ret <- structure(list(form = substitute(form),
-                        X = X,
-                        Xt = t(X)),
-                   class = "mc")
   return(ret)
+}
+.new_mc <- function(..., class = character()) {
+  ret <- structure(list(...),
+                   class = c(class, "mc"))
+  return(ret)
+}
+.new_fixedmc <- function(form, X) {
+  .new_mc(form = form, X = X, Xt = t(X), class = "fixedmc")
+}
+.new_freemc <- function(form) {
+  .new_mc(form = form, class = "free")
 }
 
 #' Generic compute function
@@ -157,13 +176,13 @@ mc <- function(form, X = NULL) {
 }
 
 #' Compute function for mc object
-#' @description Internal function used to evaluate expressions containing functions of model objects.
+#' @description Internal function used to evaluate expressions containing objects of type \code{fixedmc}.
 #' @export
 #' @importFrom Matrix t
 #' @param object An object of type mc.
 #' @param env Computing environment.
 #' @param ... Not used.
-.computeC.mc <- function(object, env, ...) {
+.computeC.fixedmc <- function(object, env, ...) {
   mci <- eval(object$form, env)
   mu <- as.vector(Matrix::t(mci %*% object$Xt)) # Vec(t(B %*% t(X)))
   return(mu)
@@ -182,19 +201,19 @@ mc <- function(form, X = NULL) {
 #}
 
 #' Compute function for svc objects
-#' @description Internal function used to evaluate expressions containing objects of type svc and fixed.
+#' @description Internal function used to evaluate expressions containing objects of type \code{fixedsvc}.
 #' @export
 #' @param object An object of type svc.
 #' @param env Computing environment.
 #' @param ... Not used.
-.computeC.fixed <- function(object, env, ...) {
+.computeC.fixedsvc <- function(object, env, ...) {
   vci <- eval(object$form, env)
   sigma <- vci %x% object$R
   return(sigma)
 }
 
 #' Compute function for svc object.
-#' @description Internal function used to evaluate expressions containing objects of type svc and free.
+#' @description Internal function used to evaluate expressions containing objects of type \code{free}.
 #' @export
 #' @param object An object of type svc.
 #' @param env Computing environment.

@@ -15,7 +15,7 @@ svc(form, R = NULL)
 An object of class \code{svc}.
 }
 \description{
-Creates a variance component object as a function of model objects and a relationship matrix.
+Creates a variance component object as a function of model objects and (optionally) a relationship matrix.
 }
 \examples{
 library(svcmr)
