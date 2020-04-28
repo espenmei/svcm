@@ -7,7 +7,7 @@
 \method{.computeC}{free}(object, env, ...)
 }
 \arguments{
-\item{object}{An object of type svc.}
+\item{object}{An object of type \code{free}.}
 
 \item{env}{Computing environment.}
 

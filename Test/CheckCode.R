@@ -27,7 +27,9 @@ mod <- svcm(pm(4, 1, paste0("l", 1:4), c(F, T, T, T), diag(1, 4), "L"),
             pm(1, 1, paste0("p", 1), T, 1, "P"),
             pm(4, 1, paste0("u", 1:4), T, 0, "U"),
             pm(1, 2, paste0("w", 1:2), T, 0, "G"),
-            svc(L %*% P %*% t(L) + TH, R = Renv),
+            ic(L %*% P %*% t(L), "CovL"),
+            ic( 1 %x% TH, "TH2"),
+            svc(CovL + TH2, R = Renv),
             mc(U, X = X),
             mc(L %*% G, X = W))
 fit <- fitm(Y, mod, se = F, control = list(trace = 6))

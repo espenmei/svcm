@@ -54,6 +54,7 @@ fit2 <- fitm(Y, mod2, se = TRUE, control = list(trace = 6))
 en = proc.time() - st
 summary(fit2)
 
+Xd = diag(2) %x% X
 mod3 <- svcm(# Parameters
   pm(nrow = 2, ncol = 2, labels = c("va11", "va21", "va21", "va22"), free = T, values = c(2, 1, 1, 2), name = "va"),
   pm(nrow = 2, ncol = 2, labels = c("ve11", "ve21", "ve21", "ve22"), free = T, values = c(2, 1, 1, 2), name = "ve"),
@@ -64,7 +65,7 @@ mod3 <- svcm(# Parameters
   svc(rbind(cbind(ve[1, 1] * Renv, ve[1, 2] * Renv),
             cbind(ve[2, 1] * Renv, ve[2, 2] * Renv))),
   # Mean components
-  mc(U, X = X))
+  mc(Xd %*% U))
 fit3 <- fitm(c(Y), mod3, se = TRUE, control = list(trace = 6))
 summary(fit3)
 
@@ -72,7 +73,6 @@ anova(fit, fit2, fit3)
 
 # OpenMx
 # -------------------------------------------
-Xd = diag(2) %x% X
 datOpenMx = data.frame(t(c(Y)))
 mod2OpenMx <- mxModel(mxMatrix("Fu", 2, 2, T, c(2, 1, 1, 2), c("va11", "va21", "va21", "va22"), name = "va"),
                       mxMatrix("Fu", 2, 2, T, c(2, 1, 1, 2), c("ve11", "ve21", "ve21", "ve22"), name = "ve"),

@@ -54,6 +54,21 @@ pm <- function(nrow = NA, ncol = NA, labels = character(),
   return(ret)
 }
 
+#' Constructor for intermediate calculation step object
+#' @description Creates an object of type \code{ic} used to represent intemediate calculation steps in a model.
+#' @export
+#' @param form An expression for the calculation.
+#' @param name Character giving name to object.
+#' @return An object of class \code{ic}.
+ic <- function(form, name = character()) {
+  if (length(name) == 0) {
+    stop("A name is required.")
+  }
+  ret <- structure(list(form = substitute(form),
+                        name = name),
+                   class = c("free", "ic"))
+  return(ret)
+}
 
 #svc <- function(form, R = NULL) {
 #  if(is.null(R)) {
@@ -215,12 +230,12 @@ mc <- function(form, X = NULL) {
 #' Compute function for svc object.
 #' @description Internal function used to evaluate expressions containing objects of type \code{free}.
 #' @export
-#' @param object An object of type svc.
+#' @param object An object of type \code{free}.
 #' @param env Computing environment.
 #' @param ... Not used.
 .computeC.free <- function(object, env, ...) {
-  sigma <- eval(object$form, env)
-  return(sigma)
+  res <- eval(object$form, env)
+  return(res)
 }
 
 #' Creates a model
@@ -252,11 +267,12 @@ mc <- function(form, X = NULL) {
 #' mc1 <- mc(form = B, X = X)
 #' mod <- svcm(L, S, vc, B, mc1)
 svcm <- function(...) {
-  # Extract only objects of type mo, svc or mc and ignore anything else.
+  # Extract only objects of type pm, svc or mc and ignore anything else.
   dots <- list(...)
   pms <- dots[sapply(dots, inherits, "pm")]
   svcs <-dots[sapply(dots, inherits, "svc")]
   mcs <- dots[sapply(dots, inherits, "mc")]
+  ics <- dots[sapply(dots, inherits, "ic")]
   if (length(pms) == 0 || length(svcs) == 0 || length(mcs) == 0) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
@@ -270,6 +286,7 @@ svcm <- function(...) {
   ret <- structure(list(pms = pms,
                         svcs = svcs,
                         mcs = mcs,
+                        ics = ics,
                         #                       objective = objective,
                         expectation = expectation),
                    class = "svcm")
@@ -321,12 +338,14 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
 
   fit_objective <- function(theta) {
     lapply(svcm$pms, .updateValues, theta, env_comp)
+    lapply(svcm$ics, function(x) assign(x$name, .computeC(x, env_comp), envir = env_comp))
     exp <- svcm$expectation(env_comp)
     return(.objective(y, exp$M, exp$S))
   }
 
   fit_objective_miss <- function(theta) {
     lapply(svcm$pms, .updateValues, theta, env_comp)
+    lapply(svcm$ics, function(x) assign(x$name, .computeC(x, env_comp), envir = env_comp))
     exp <- svcm$expectation(env_comp)
     return(.objective(y, exp$M[-missy], exp$S[-missy, -missy]))
   }
