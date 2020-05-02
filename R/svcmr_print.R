@@ -4,9 +4,14 @@
 #' @param x An object of type svc.
 #' @param ... Not used.
 print.svc <- function(x, ...) {
-  dimR <- dim(x$R)
+
   cat("Covariance model:\n")
   print(x$form)
+
+  if(is.null(x$R)) {
+    break
+  }
+  dimR <- dim(x$R)
   cat("\nDimension of R:\n")
   cat(dimR[1], "x", dimR[2], "\n")
   cat("\nDistinct elements in off-diagonal:")
@@ -25,9 +30,14 @@ print.svc <- function(x, ...) {
 #' @param x An object of type mc.
 #' @param ... Not used
 print.mc <- function(x, ...) {
-  dimX <- dim(x$X)
+
   cat("Mean model:\n")
   print(x$form)
+
+  if(is.null(x$X)) {
+    break
+  }
+  dimX <- dim(x$X)
   cat("\nDimension of X:\n")
   cat(dimX[1], "x", dimX[2], "\n")
 }
