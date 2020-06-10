@@ -23,13 +23,13 @@ N <- dim(Rgen)[1]
 a <- MASS::mvrnorm(1, rep(0, N), 2 * Rgen)
 # Sample environmental deviations
 e <- rnorm(N, 0, sqrt(2))
-# Common factor
+# Common factors
 eta <- a + e
 # Loadings
 l <- matrix(c(1, 0.5, 0.5, 0.8), 4, 1)
 # Intercepts
 b = c(2, 2, 4, 4)
-# Data
+# Observed data
 Y <- matrix(NA, N, 4, dimnames = list(NULL, paste0("y", 1:4)))
 for(i in 1:nrow(Y)) {
  Y[i, ] <- b + l %*% eta[i] + rnorm(4)
@@ -45,13 +45,14 @@ The structural model is
 $$
 \eta_i = a_i + e_i.
 $$
+
 The distribution of the individual unique factors can be described as
 $$
-\boldsymbol{\epsilon}_i \sim N(\boldsymbol{0}, \mathbf{\Theta}).
+\boldsymbol{\epsilon}_i \sim N(\boldsymbol{0}, \theta \mathbf{I}_{4\times 4}).
 $$
-The distribution of the individual unique environmental deviations can be described as
+The distribution of the unique environmental deviations are indpendet across individuals
 $$
-e \sim N(0, \sigma^2_e).
+\boldsymbol{e} \sim N(\boldsymbol{0}, \sigma^2_e \mathbf{I}_{N\times N}).
 $$
 The genotypic values are dependent across individuals. The distribution of the genotypic values across all individuals can be described as
 $$
@@ -59,32 +60,32 @@ $$
 $$
 
 ### Fit the model in **svcmr**
-The **svcmr** interface only requires that the structural equation model is specied to apply for each individual. The user must construct relationship matrices that relates to different variance components, but other than that the required arrangement of data/paremters is handled internally. The above model can be specified in **svcmr** as follows.
+The **svcmr** interface only requires that the structural equation model is specied to apply for each individual. The user must construct relationship matrices that relates to different variance components, but other than that the required arrangement of data/parameters is handled internally. The above model can be specified in **svcmr** as follows.
 ```{r specify_model}
 library(svcmr)
 
 # Relationship matrix for unique environmental deviations
-Renv <- Matrix::Diagonal(dim(Rgen)[1])
+Renv <- Matrix::Diagonal(N)
 
 # Covariates
 X <- matrix(1, N, 1)
 
-mod <- svcm(# Parameters
+mod1 <- svcm(# Parameters
             pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
             pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
             pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
-            pm(nrow = 4, ncol = 4, labels = paste0("th", 1:16), free = diag(T, 4), values = diag(1, 4), name = "TH"),
+            pm(nrow = 4, ncol = 4, labels = paste0("th", 1:16), free = diag(T, 4), values = diag(4), name = "TH"),
             pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
             # Variance components
             svc(L %*% Sa %*% t(L), R = Rgen),
             svc(L %*% Se %*% t(L) + TH, R = Renv),
             # Mean components
             mc(U, X = X))
-fit <- fitm(Y, mod, se = TRUE, control = list(trace = 6))
-summary(fit)
+fit1 <- fitm(Y, mod1, se = TRUE, control = list(trace = 10))
+summary(fit1)
 ```
 
-Equality constraints can be obtained be using the same labels for several parameters. If we want the variance of the specific factors to be constant we could do it like this.
+Equality constraints of parameters can be obtained using the same labels. For example, the variance of the specific factors can be specified as constant like this.
 ```{r specifiy_model2}
 lab_TH <- matrix(NA, 4, 4)
 diag(lab_TH) <- "th"
@@ -92,20 +93,20 @@ mod2 <- svcm(# Parameters
             pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
             pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
             pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
-            pm(nrow = 4, ncol = 4, labels = lab_TH, free = diag(T, 4), values = diag(1, 4), name = "TH"),
+            pm(nrow = 4, ncol = 4, labels = lab_TH, free = diag(T, 4), values = diag(4), name = "TH"),
             pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
             # Variance components
             svc(L %*% Sa %*% t(L), R = Rgen),
             svc(L %*% Se %*% t(L) + TH, R = Renv),
             # Mean components
             mc(U, X = X))
-fit2 <- fitm(Y, mod2, se = TRUE, control = list(trace = 6))
+fit2 <- fitm(Y, mod2, se = TRUE, control = list(trace = 10))
 summary(fit2)
 
 ```
 
-The models can the be compared.
+The models can then be compared.
 ```{r compare_models}
-anova(fit, fit2)
+anova(fit1, fit2)
 ```
 
