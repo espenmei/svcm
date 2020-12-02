@@ -445,7 +445,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
     stop("x must have same number of columns as the length of mu")
   }
 
-  A <- expand(CH)
+  A <- Matrix::expand(CH)
   detL <- sum(log(Matrix::diag(A$L)))
   C <- -0.918938533204673 * k
   y <- Matrix::solve(A$L, t(x) - mu)
