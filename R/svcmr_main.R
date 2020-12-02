@@ -402,17 +402,20 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
 }
 
 #' Objective function
-#' @description Objetive function form multivariate normal
+#' @description Objective function
 #' @export
 #' @param y Data vector.
 #' @param M Mean vector.
 #' @param S Covariance matrix.
 #' @return Twice negative log likelihood.
 .objective <- function(y, M, S) {
-  lS <- Matrix::Cholesky(S)
-  #ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
-  ll <- .ldmvnorm(y, M, lS)
-  return(-2 * ll)
+  cholS <- Matrix::Cholesky(S, perm = F)
+  L = Matrix::expand(cholS)$L
+  r = Matrix::solve(L, (y - M))
+  dev = log(2*pi) * length(y) + 2*sum(log(Matrix::diag(L))) + sum(r^2)
+
+  ##ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
+  return(dev)
 }
 
 
