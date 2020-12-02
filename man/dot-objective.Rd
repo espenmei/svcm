@@ -17,5 +17,5 @@
 Twice negative log likelihood.
 }
 \description{
-Objetive function form multivariate normal
+Objective function
 }

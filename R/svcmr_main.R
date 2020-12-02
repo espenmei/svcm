@@ -410,44 +410,10 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
 #' @return Twice negative log likelihood.
 .objective <- function(y, M, S) {
   cholS <- Matrix::Cholesky(S, perm = F)
-  L = Matrix::expand(cholS)$L
-  r = Matrix::solve(L, (y - M))
-  dev = log(2*pi) * length(y) + 2*sum(log(Matrix::diag(L))) + sum(r^2)
-
-  ##ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
+  L <- Matrix::expand(cholS)$L
+  r <- Matrix::solve(L, (y - M))
+  dev <- log(2*pi) * length(y) + 2*sum(log(Matrix::diag(L))) + sum(r^2)
   return(dev)
-}
-
-
-#' Multivariate normal log-density. Copied from https://github.com/cran/sparseMVN
-#' @description Computes multivariate normal log-density based on sparse matrix types.
-#' @export
-#' @param x Data vector.
-#' @param mu Mean vector.
-#' @param CH Result from Matrix::Cholesky
-#' @return Log likelihood.
-.ldmvnorm <- function(x, mu, CH) {
-  if (is.vector(x) | (is.atomic(x) & NCOL(x) == 1)) {
-    x <- matrix(x, nrow = 1)
-  }
-  k <- length(mu)
-  n <- NROW(x)
-  if (!(k > 0)) {
-    stop("mu must have positive length")
-  }
-  if (!(k == dim(CH)[1])) {
-    stop("dimensions of mu and CH do not conform")
-  }
-  if (k != NCOL(x)) {
-    stop("x must have same number of columns as the length of mu")
-  }
-
-  A <- Matrix::expand(CH)
-  detL <- sum(log(Matrix::diag(A$L)))
-  C <- -0.918938533204673 * k
-  y <- Matrix::solve(A$L, t(x) - mu)
-  log.dens <- C - detL - Matrix::colSums(y * y) / 2
-  return(log.dens)
 }
 
 #' Compute hessian
