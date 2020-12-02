@@ -3,7 +3,7 @@ library(lavaan)
 
 # Data
 # --------------------------
-N <- 100
+N <- 200
 W <- matrix(rnorm(N * 2), N, 2)
 eta <- W %*% c(2, 3) + rnorm(N, 0, sqrt(2))
 l <- matrix(c(1, 0.5, 0.5, 0.8), 4, 1)
@@ -14,25 +14,25 @@ for(i in 1:nrow(Y)) {
 }
 Renv <- Matrix::Diagonal(N)
 X <- matrix(1, N, 1)
-Y[1:10, 1] = NA
+#Y[1:10, 1] = NA
 
 # svcmr
 # --------------------------
 # Failer hvis noen av de ikke-diagonale også heter "th". Hmm?
 lab_th = matrix(NA, 4, 4)
 #lab_th = matrix("th", 4, 4)
-diag(lab_th) = c("th", "th", "th3", "th4")
-mod <- svcm(pm(4, 1, paste0("l", 1:4), c(F, T, T, T), diag(1, 4), "L"),
+diag(lab_th) = c("th", "th2", "th3", "th4")
+mod <- svcm(pm(4, 1, paste0("l", 1:4), c(T, T, T, T), rep(1, 4), "L"),
             pm(4, 4, lab_th, diag(T, 4), diag(1, 4), "TH"),
-            pm(1, 1, paste0("p", 1), T, 1, "P"),
-            pm(4, 1, paste0("u", 1:4), T, 0, "U"),
-            pm(1, 2, paste0("w", 1:2), T, 0, "G"),
-            ic(L %*% P %*% t(L), "CovL"),
-            ic( 1 %x% TH, "TH2"),
-            svc(CovL + TH2, R = Renv),
+            pm(1, 1, paste0("p", 1), F, 1, "P"),
+            pm(4, 1, paste0("u", 1:4), T, 2, "U"),
+            pm(1, 2, paste0("w", 1:2), T, 1, "G"),
+            ic(L %*% (P %*% t(P)) %*% t(L), "CovL"),
+            #ic( 1 %x% TH, "TH2"),
+            svc(CovL + TH, R = Renv),
             mc(U, X = X),
             mc(L %*% G, X = W))
-fit <- fitm(Y, mod, se = F, control = list(trace = 6))
+fit <- fitm(Y, mod, se = F, control = list(trace = 1))
 summary(fit)
 #fit$hessian <- compHess(fit$fit_objective, fit$fit$par)
 
@@ -52,19 +52,21 @@ mo = pm(4, 1, paste0("l", 1:4), c(F, T, T, T), diag(1, 4), "L")
 # --------------------------
 dat = data.frame(Y, W)
 modl = "
-eta =~ 1*y1 + l2*y2 + l3*y3 + l4*y4
+eta =~ NA*y1 + l2*y2 + l3*y3 + l4*y4
 eta ~ w1*X1 + w2*X2
+eta ~~ 1*eta
 y1~~th*y1
-y2~~th*y2
+y2~~th2*y2
 y3~~th3*y3
 y4~~th4*y4
 "
-fitl = cfa(modl, dat, meanstructure = T,  missing = "ML")
+fitl = cfa(modl, dat, meanstructure = T, conditional.x = T)
 summary(fitl)
 
 logLik(fit)
 logLik(fitl)
-
+coef(fit)
+coef(fitl)
 # Free
 # --------------------------
 mod2 <- svcm(pm(4, 1, paste0("l", 1:4), c(F, T, T, T), diag(1, 4), "L"),
