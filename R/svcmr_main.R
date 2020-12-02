@@ -408,12 +408,19 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
 #' @param M Mean vector.
 #' @param S Covariance matrix.
 #' @return Twice negative log likelihood.
+#.objective <- function(y, M, S) {
+#  lS <- Matrix::Cholesky(S)
+#  #ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
+#  ll <- .ldmvnorm(y, M, lS)
+#  return(-2 * ll)
+#}
 .objective <- function(y, M, S) {
   lS <- Matrix::Cholesky(S)
   #ll <- sparseMVN::dmvn.sparse(y, M, CH = lS, prec = FALSE)
   ll <- .ldmvnorm(y, M, lS)
   return(-2 * ll)
 }
+
 
 #' Multivariate normal log-density. Copied from https://github.com/cran/sparseMVN
 #' @description Computes multivariate normal log-density based on sparse matrix types.
