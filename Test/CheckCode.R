@@ -5,7 +5,7 @@ library(lme4)
 # Random intercept model
 # --------------------------
 I = 4
-J = 100000
+J = 10000
 Y = matrix(NA, J, I, dimnames = list(NULL, paste0("y", 1:I)))
 for(j in 1:J) {
   eta = rnorm(1)

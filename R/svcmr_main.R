@@ -412,7 +412,7 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   r2 <- Matrix::solve(ch, rm)
   deter <- 2 * Matrix::determinant(ch)$modulus
   dev <- log(2*pi) * length(y) + deter + sum(rm * r2)
-  return(as.vector(dev))
+  return(dev)
 }
 
 #' Compute hessian
