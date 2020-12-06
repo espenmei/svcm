@@ -383,8 +383,6 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   if(se) {
     message("Computing standard errors.")
     H <-compHess(fit_objective, fit$par)
-    #H <- numDeriv::hessian(fit_objective, fit$par)
-    #dimnames(H) <- list(names(theta_start_u), names(theta_start_u))
   }
   # Update svcm object with values from solution before return.
   for (i in seq_along(svcm$pms)) {
@@ -409,11 +407,12 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
 #' @param S Covariance matrix.
 #' @return Twice negative log likelihood.
 .objective <- function(y, M, S) {
-  cholS <- Matrix::Cholesky(S, perm = F)
-  L <- Matrix::expand(cholS)$L
-  r <- Matrix::solve(L, (y - M))
-  dev <- log(2*pi) * length(y) + 2*sum(log(Matrix::diag(L))) + sum(r^2)
-  return(dev)
+  ch <- Matrix::Cholesky(S)
+  rm <- y - M
+  r2 <- Matrix::solve(ch, rm)
+  deter <- 2 * Matrix::determinant(ch)$modulus
+  dev <- log(2*pi) * length(y) + deter + sum(rm * r2)
+  return(as.vector(dev))
 }
 
 #' Compute hessian
