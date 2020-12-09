@@ -32,7 +32,7 @@ b = c(2, 2, 4, 4)
 # Observed data
 Y <- matrix(NA, N, 4, dimnames = list(NULL, paste0("y", 1:4)))
 for(i in 1:nrow(Y)) {
- Y[i, ] <- b + l %*% eta[i] + rnorm(4)
+  Y[i, ] <- b + l %*% eta[i] + rnorm(4)
 }
 ```
 
@@ -70,43 +70,51 @@ Renv <- Matrix::Diagonal(N)
 # Covariates
 X <- matrix(1, N, 1)
 
-mod1 <- svcm(# Parameters
-            pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
-            pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
-            pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
-            pm(nrow = 4, ncol = 4, labels = paste0("th", 1:16), free = diag(T, 4), values = diag(4), name = "TH"),
-            pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
-            # Variance components
-            svc(L %*% Sa %*% t(L), R = Rgen),
-            svc(L %*% Se %*% t(L) + TH, R = Renv),
-            # Mean components
-            mc(U, X = X))
-fit1 <- fitm(Y, mod1, se = TRUE, control = list(trace = 10))
-summary(fit1)
+mod1 <- svcm(
+  #Data
+  Y,
+  # Parameters
+  pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
+  pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
+  pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
+  pm(nrow = 4, ncol = 4, labels = paste0("th", 1:16), free = diag(T, 4), values = diag(4), name = "TH"),
+  pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
+  # Variance components
+  svc(L %*% Sa %*% t(L), R = Rgen),
+  svc(L %*% Se %*% t(L) + TH, R = Renv),
+  # Mean components
+  mc(U, X = X)
+)
+mod1 <- fitm(mod1, se = TRUE, control = list(trace = 10))
+summary(mod1)
 ```
 
 Equality constraints of parameters can be obtained using the same labels. For example, the variance of the specific factors can be specified as constant like this.
 ```{r specifiy_model2}
 lab_TH <- matrix(NA, 4, 4)
 diag(lab_TH) <- "th"
-mod2 <- svcm(# Parameters
-            pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
-            pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
-            pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
-            pm(nrow = 4, ncol = 4, labels = lab_TH, free = diag(T, 4), values = diag(4), name = "TH"),
-            pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
-            # Variance components
-            svc(L %*% Sa %*% t(L), R = Rgen),
-            svc(L %*% Se %*% t(L) + TH, R = Renv),
-            # Mean components
-            mc(U, X = X))
-fit2 <- fitm(Y, mod2, se = TRUE, control = list(trace = 10))
-summary(fit2)
+mod2 <- svcm(
+  # Data
+  Y,
+  # Parameters
+  pm(nrow = 4, ncol = 1, labels = paste0("l", 1:4), free = c(F, T, T, T), values = 1, name = "L"),
+  pm(nrow = 1, ncol = 1, labels = "Sa1", free = T, values = 1, name = "Sa"),
+  pm(nrow = 1, ncol = 1, labels = "Se1", free = T, values = 1, name = "Se"),
+  pm(nrow = 4, ncol = 4, labels = lab_TH, free = diag(T, 4), values = diag(4), name = "TH"),
+  pm(nrow = 4, ncol = 1, labels = paste0("u", 1:4), free = T, values = 0, name = "U"),
+  # Variance components
+  svc(L %*% Sa %*% t(L), R = Rgen),
+  svc(L %*% Se %*% t(L) + TH, R = Renv),
+  # Mean components
+  mc(U, X = X)
+  )
+mod2 <- fitm(mod2, se = TRUE, control = list(trace = 10))
+summary(mod2)
 
 ```
 
 The models can then be compared.
 ```{r compare_models}
-anova(fit1, fit2)
+anova(mod1, mod2)
 ```
 
