@@ -15,5 +15,5 @@ ic(form, name = character())
 An object of class \code{ic}.
 }
 \description{
-Creates an object of type \code{ic} used to represent intemediate calculation steps in a model.
+Creates an object of type \code{ic} used to represent intermediate calculation steps in a model.
 }

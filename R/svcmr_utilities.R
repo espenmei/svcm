@@ -39,10 +39,10 @@ compute.fitm <- function(object, form, ...) {
 #' @export
 #' @param object An object of type \code{fitm}.
 #' @param ... Not used.
-summary.fitm <- function(object, ...) {
-  theta <- object$fit$par
+summary.svcm <- function(object, ...) {
+  theta <- object$opt$par
   ses <- rep(NA, length(theta))
-  if(!is.null(object$hessian)) {
+  if(!is.null(object$H)) {
     ses <- sqrt(diag(vcov(object)))
   }
   zVal <- theta / ses
@@ -50,15 +50,15 @@ summary.fitm <- function(object, ...) {
   ret <- structure(list(N = attr(ll, "nobs"),
                         K = length(theta),
                         logl = ll,
-                        dev = object$fit$objective,
+                        dev = object$opt$objective,
                         AIC = AIC(object),
                         BIC = BIC(object),
                         est = data.frame(Estimate = theta,
                                          `Std. Error` = ses,
-                                         `Z value` = zVal,
+                                         `z value` = zVal,
                                          `Pr(>|z|)` =  pchisq(zVal^2, 1, lower.tail = FALSE),
                                          row.names = names(theta), check.names = FALSE)),
-                   class = "summary.fitm")
+                   class = "summary.svcm")
   return(ret)
 }
 
@@ -68,10 +68,10 @@ summary.fitm <- function(object, ...) {
 #' @export
 #' @param object An object of type fitm.
 #' @param ... Not used.
-logLik.fitm <- function(object, ...) {
-  ll <- -0.5 * object$fit$objective
-  attr(ll, "nobs") <- length(object$y)
-  attr(ll, "df") <- length(object$fit$par)
+logLik.svcm <- function(object, ...) {
+  ll <- -0.5 * object$opt$objective
+  attr(ll, "nobs") <- length(object$dat$y[object$dat$keepy])
+  attr(ll, "df") <- length(object$opt$par)
   class(ll) <- "logLik"
   return(ll)
 }
@@ -82,18 +82,8 @@ logLik.fitm <- function(object, ...) {
 #' @param object An object of type fitm.
 #' @param ... Not used.
 #' @return Fitted parameters.
-coef.fitm <- function(object, ...) {
-  return(object$fit$par)
-}
-
-#' Returns fitted model parameters.
-#' @description Returns detailed table of model parameters for objects of class \code{summary.fitm}.
-#' @export
-#' @param object An object of class summary.fitm.
-#' @param ... Not used.
-#' @return \code{data.frame} of model parameters with details.
-coef.summary.fitm <- function(object, ...) {
-  return(object$est)
+coef.svcm <- function(object, ...) {
+  return(object$opt$par)
 }
 
 #' Returns covariance matrix of fitted model parameters.
@@ -102,24 +92,24 @@ coef.summary.fitm <- function(object, ...) {
 #' @param object An object of type fitm.
 #' @param ... Not used.
 #' @return Covariance matrix of fitted parameters.
-vcov.fitm <- function(object, ...) {
-  if(is.null(object$hessian)) {
+vcov.svcm <- function(object, ...) {
+  if(is.null(object$H)) {
     stop("Parameter covariance matrix is not available. Try fitting model with se = TRUE.")
   } else {
-    return(solve(0.5 * object$hessian))
+    return(solve(0.5 * object$H))
   }
 }
 
 #' Deviance tables.
-#' @description Produce deviance tables for fitm objects.
+#' @description Produce deviance tables for \code{svcm} objects.
 #' @export
-#' @param object An object of type fitm.
-#' @param ... Not used.
+#' @param object An object of type \code{svcm}.
+#' @param ... list of \code{svcm} models.
 #' @return Anova.
-anova.fitm <- function(object, ...) {
+anova.svcm <- function(object, ...) {
   mNms <- sapply(sys.call()[-1], as.character)
   dots <- list(...)
-  cFits <- sapply(dots, inherits, "fitm")
+  cFits <- sapply(dots, inherits, "svcm")
   if(any(cFits)) {
     fits <- c(list(object), dots[cFits])
   } else {

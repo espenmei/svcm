@@ -4,48 +4,18 @@
 \alias{fitm}
 \title{Fit a model}
 \usage{
-fitm(Y, svcm, se = FALSE, ...)
+fitm(svcm, se = FALSE, ...)
 }
 \arguments{
-\item{Y}{Data described by model.}
+\item{svcm}{an object of class \code{svcm}.}
 
-\item{svcm}{An object of class \code{svcm}.}
+\item{se}{dhould standard errors be computed?}
 
-\item{se}{Should standard errors be computed?}
-
-\item{...}{Arguments passed to nlminb.}
+\item{...}{arguments passed to \code{nlminb}.}
 }
 \value{
-An object of class \code{fitm}.
+an object of class \code{svcm}.
 }
 \description{
-Fits a model returned from svcm.
-}
-\examples{
-library(svcmr)
-R <- Matrix::Diagonal(100)
-L <- pm(nrow = 6, ncol = 2,
-        labels = paste0("l", 1:12),
-        values = c(1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1),
-        free = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE,
-                 FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-        name = "L")
-S <- pm(nrow = 2, ncol = 2,
-        labels = c("s11", "s12", "s12", "s22"),
-        values = c(2, 1, 1, 2),
-        free = TRUE,
-        name = "S")
-vc <- svc(form = L \%*\% S \%*\% t(L), R = R)
-X <- cbind(1, rnorm(100))
-B <- pm(nrow = 6, ncol = 2,
-        labels = paste0("b", 1:12),
-        values = 0,
-        free = TRUE,
-        name = "B")
-mc1 <- mc(form = B, X = X)
-mod <- svcm(L, S, vc, B, mc1)
-Y <- matrix(rnorm(100 * 4), 100, 4)
-\dontrun{
-fit <- fitm(Y, mod, se = TRUE)
-}
+fits a \code{svcm} model.
 }

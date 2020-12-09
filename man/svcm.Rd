@@ -4,38 +4,16 @@
 \alias{svcm}
 \title{Creates a model}
 \usage{
-svcm(...)
+svcm(Y, ...)
 }
 \arguments{
+\item{Y}{Matrix of data described by model.}
+
 \item{...}{All relevant model, mean and variance components objects used to define the model.}
 }
 \value{
 An object of type svcm.
 }
 \description{
-Creates a new model from model, mean and variance components objects
-}
-\examples{
-library(svcmr)
-R <- Matrix::Diagonal(100)
-L <- pm(nrow = 6, ncol = 2,
-        labels = paste0("l", 1:12),
-        values = c(1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1),
-        free = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE,
-                 FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-        name = "L")
-S <- pm(nrow = 2, ncol = 2,
-        labels = c("s11", "s12", "s12", "s22"),
-        values = c(2, 1, 1, 2),
-        free = TRUE,
-        name = "S")
-vc <- svc(form = L \%*\% S \%*\% t(L), R = R)
-X <- cbind(1, rnorm(100))
-B <- pm(nrow = 6, ncol = 2,
-        labels = paste0("b", 1:12),
-        values = 0,
-        free = TRUE,
-        name = "B")
-mc1 <- mc(form = B, X = X)
-mod <- svcm(L, S, vc, B, mc1)
+Creates a new model
 }

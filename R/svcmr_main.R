@@ -55,7 +55,7 @@ pm <- function(nrow = NA, ncol = NA, labels = character(),
 }
 
 #' Constructor for intermediate calculation step object
-#' @description Creates an object of type \code{ic} used to represent intemediate calculation steps in a model.
+#' @description Creates an object of type \code{ic} used to represent intermediate calculation steps in a model.
 #' @export
 #' @param form An expression for the calculation.
 #' @param name Character giving name to object.
@@ -69,22 +69,6 @@ ic <- function(form, name = character()) {
                    class = c("free", "ic"))
   return(ret)
 }
-
-#svc <- function(form, R = NULL) {
-#  if(is.null(R)) {
-#    stop("A relationship matrix must be supplied.")
-#  }
-#  if(!inherits(R, "Matrix")) {
-#    stop("R must be of class Matrix")
-#  }
-#  if(!Matrix::isSymmetric(R)) {
-#    stop("Relationship matrix must be symmetric.")
-#  }
-#  ret <- structure(list(form = substitute(form),
-#                        R = R),
-#                   class = "svc")
-#  return(ret)
-#}
 
 #' Constructor for variance component object
 #' @description Creates a variance component object as a function of model objects and (optionally) a relationship matrix.
@@ -143,22 +127,6 @@ svc <- function(form, R = NULL) {
 #'         free = TRUE,
 #'         name = "B")
 #' mc <- mc(form = B, X = X)
-#mc <- function(form, X = NULL) {
-#  if (is.null(X)) {
-#    stop("A design matrix must be supplied.")
-#  }
-#  if (anyNA(X)) {
-#    stop("Missing values in X is not allowed.")
-#  }
-#  if (!is.numeric(X)) {
-#    stop("X must be numeric.")
-#  }
-#  ret <- structure(list(form = substitute(form),
-#                        X = X,
-#                        Xt = t(X)),
-#                   class = "mc")
-#  return(ret)
-#}
 mc <- function(form, X = NULL) {
   if(is.null(X)) {
     ret <- .new_freemc(form = substitute(form))
@@ -203,18 +171,6 @@ mc <- function(form, X = NULL) {
   return(mu)
 }
 
-# #' Compute function for svc object.
-# #' @description Internal function used to evaluate expressions containing functions of model objects.
-# #' @export
-# #' @param object An object of type svc.
-# #' @param env Computing environment.
-# #' @param ... Not used.
-#.computeC.svc <- function(object, env, ...) {
-#  vci <- eval(object$form, env)
-#  sigma <- vci %x% object$R
-#  return(sigma)
-#}
-
 #' Compute function for svc objects
 #' @description Internal function used to evaluate expressions containing objects of type \code{fixedsvc}.
 #' @export
@@ -239,35 +195,13 @@ mc <- function(form, X = NULL) {
 }
 
 #' Creates a model
-#' @description Creates a new model from model, mean and variance components objects
+#' @description Creates a new model
 #' @export
+#' @param Y Matrix of data described by model.
 #' @param ... All relevant model, mean and variance components objects used to define the model.
 #' @return An object of type svcm.
-#' @examples
-#' library(svcmr)
-#' R <- Matrix::Diagonal(100)
-#' L <- pm(nrow = 6, ncol = 2,
-#'         labels = paste0("l", 1:12),
-#'         values = c(1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1),
-#'         free = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE,
-#'                  FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-#'         name = "L")
-#' S <- pm(nrow = 2, ncol = 2,
-#'         labels = c("s11", "s12", "s12", "s22"),
-#'         values = c(2, 1, 1, 2),
-#'         free = TRUE,
-#'         name = "S")
-#' vc <- svc(form = L %*% S %*% t(L), R = R)
-#' X <- cbind(1, rnorm(100))
-#' B <- pm(nrow = 6, ncol = 2,
-#'         labels = paste0("b", 1:12),
-#'         values = 0,
-#'         free = TRUE,
-#'         name = "B")
-#' mc1 <- mc(form = B, X = X)
-#' mod <- svcm(L, S, vc, B, mc1)
-svcm <- function(...) {
-  # Extract only objects of type pm, svc or mc and ignore anything else.
+svcm <- function(Y, ...) {
+  # Extract only objects of type pm, svc, mc and ic and ignore anything else.
   dots <- list(...)
   pms <- dots[sapply(dots, inherits, "pm")]
   svcs <-dots[sapply(dots, inherits, "svc")]
@@ -276,88 +210,60 @@ svcm <- function(...) {
   if (length(pms) == 0 || length(svcs) == 0 || length(mcs) == 0) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
-  # Compute expectations for normal distribution
-  expectation <- function(env_comp) {
-    M <- Reduce("+", lapply(mcs, .computeC, env_comp))
-    S <- Reduce("+", lapply(svcs, .computeC, env_comp))
-    return(list(M = M,
-                S = S))
-  }
-  ret <- structure(list(pms = pms,
+
+  ret <- structure(list(dat = datm(Y),
+                        pms = pms,
                         svcs = svcs,
                         mcs = mcs,
                         ics = ics,
-                        #                       objective = objective,
-                        expectation = expectation),
+                        env_comp = new.env(), # Computing environment
+                        opt = NULL,
+                        H = NULL),
                    class = "svcm")
   return(ret)
 }
 
-#' Fit a model
-#' @description Fits a model returned from svcm.
+#' Create a object for storing data
+#' @description creates a \code{datm} object.
 #' @export
-#' @param Y Data described by model.
-#' @param svcm An object of class \code{svcm}.
-#' @param se Should standard errors be computed?
-#' @param ... Arguments passed to nlminb.
-#' @return An object of class \code{fitm}.
-#' @examples
-#' library(svcmr)
-#' R <- Matrix::Diagonal(100)
-#' L <- pm(nrow = 6, ncol = 2,
-#'         labels = paste0("l", 1:12),
-#'         values = c(1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1),
-#'         free = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE,
-#'                  FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-#'         name = "L")
-#' S <- pm(nrow = 2, ncol = 2,
-#'         labels = c("s11", "s12", "s12", "s22"),
-#'         values = c(2, 1, 1, 2),
-#'         free = TRUE,
-#'         name = "S")
-#' vc <- svc(form = L %*% S %*% t(L), R = R)
-#' X <- cbind(1, rnorm(100))
-#' B <- pm(nrow = 6, ncol = 2,
-#'         labels = paste0("b", 1:12),
-#'         values = 0,
-#'         free = TRUE,
-#'         name = "B")
-#' mc1 <- mc(form = B, X = X)
-#' mod <- svcm(L, S, vc, B, mc1)
-#' Y <- matrix(rnorm(100 * 4), 100, 4)
-#' \dontrun{
-#' fit <- fitm(Y, mod, se = TRUE)
-#' }
-fitm <- function(Y, svcm, se = FALSE, ...) {
-  if (!inherits(svcm, "svcm")) {
-    stop("Only objects of type svcm are accepted.")
-  }
+#' @param Y data described by model.
+#' @return an object of class \code{datm}.
+datm <- function(Y) {
   if (!is.numeric(Y)) {
     stop("Y must be numeric.")
   }
-
-  fit_objective <- function(theta) {
-    lapply(svcm$pms, .updateValues, theta, env_comp)
-    lapply(svcm$ics, function(x) assign(x$name, .computeC(x, env_comp), envir = env_comp))
-    exp <- svcm$expectation(env_comp)
-    return(.objective(y, exp$M, exp$S))
-  }
-
-  fit_objective_miss <- function(theta) {
-    lapply(svcm$pms, .updateValues, theta, env_comp)
-    lapply(svcm$ics, function(x) assign(x$name, .computeC(x, env_comp), envir = env_comp))
-    exp <- svcm$expectation(env_comp)
-    return(.objective(y, exp$M[-missy], exp$S[-missy, -missy]))
-  }
-
   # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
   y <- c(Y)
-  # Find positions of missing values
-  missy <- which(is.na(y))
-  fit_objective <- fit_objective
-  if(length(missy) > 0) {
-    y <- y[-missy]
-    fit_objective <- fit_objective_miss
+  # Find positions of non-missing values
+  keepy <- !is.na(y)
+
+  structure(list(Y = Y,
+                 y = y,
+                 keepy = keepy),
+            class = "datm")
+}
+
+#' Fit a model
+#' @description fits a \code{svcm} model.
+#' @export
+#' @param svcm an object of class \code{svcm}.
+#' @param se dhould standard errors be computed?
+#' @param ... arguments passed to \code{nlminb}.
+#' @return an object of class \code{svcm}.
+fitm <- function(svcm, se = FALSE, ...) {
+
+  if (!inherits(svcm, "svcm")) {
+    stop("Only objects of type svcm are accepted.")
+  }
+
+  if (!is.null(svcm$opt)) {
+    stop("This model has already been fitted.")
+  }
+
+  fit_objective <- function(theta) {
+    lapply(svcm$pms, .updateValues, theta, svcm$env_comp)
+    lapply(svcm$ics, function(x) assign(x$name, .computeC(x, svcm$env_comp), envir = svcm$env_comp))
+    return(objective(svcm))
   }
 
   # Set start values
@@ -365,48 +271,44 @@ fitm <- function(Y, svcm, se = FALSE, ...) {
   names(theta_start) <- unlist(lapply(svcm$pms, .getFreeLabels))
   # Keep only one (first) when equal labels (equality constraints)
   theta_start_u <- theta_start[!duplicated(names(theta_start))]
-  # Create computing environment for fitting
-  env_comp <- new.env()
   # optimize model
   cat("\niteration: objective:", names(theta_start_u), "\n")
   time_start <- proc.time()
   fit <- nlminb(theta_start_u, fit_objective, ...)
-  time_used <- proc.time() - time_start
+  fit$time <- proc.time() - time_start
   if(fit$convergence != 0) {
     warning("Optimization may not have converged.",
             " \nnlminb convergence code: ", fit$convergence,
             " \nnlminb message: ", fit$message)
   }
 
-  # Hessian at minimum
-  H <- NULL
-  if(se) {
-    message("Computing standard errors.")
-    H <-compHess(fit_objective, fit$par)
-  }
+  svcm$opt = fit
+
   # Update svcm object with values from solution before return.
   for (i in seq_along(svcm$pms)) {
-    svcm$pms[[i]]$values <- get(svcm$pms[[i]]$name, envir = env_comp)
+    svcm$pms[[i]]$values <- get(svcm$pms[[i]]$name, envir = svcm$env_comp)
   }
-  ret <- structure(list(y = y,
-                        fit_objective = fit_objective,
-                        fit = fit,
-                        hessian = H,
-                        time = time_used,
-                        env_comp = env_comp,
-                        svcm = svcm),
-                   class = "fitm")
-  return(ret)
+
+  # Hessian at minimum
+  if(se) {
+    message("Computing standard errors.")
+    svcm$H <-compHess(fit_objective, fit$par)
+  }
+
+  return(svcm)
 }
 
 #' Objective function
 #' @description Objective function
 #' @export
-#' @param y Data vector.
-#' @param M Mean vector.
-#' @param S Covariance matrix.
+#' @param mod An object of type \code{fitm}
 #' @return Twice negative log likelihood.
-.objective <- function(y, M, S) {
+objective <- function(mod) {
+
+  M <- expectedM(mod)
+  S <- expectedS(mod)
+  y <- mod$dat$y[mod$dat$keepy]
+
   ch <- Matrix::Cholesky(S)
   rm <- y - M
   r2 <- Matrix::solve(ch, rm)
@@ -426,4 +328,32 @@ compHess <- function(fit_objective, par, ...) {
   H <- numDeriv::hessian(fit_objective, par, ...)
   dimnames(H) <- list(names(par), names(par))
   return(H)
+}
+
+#' Model implied mean vector
+#' @description Compute model implied mean vector.
+#' @export
+#' @param svcm an instance of an \code{svcm} model.
+#' @param dropmiss drop expectation for missing values?
+#' @return vector of means.
+expectedM <- function(svcm, dropmiss = T) {
+  M <- Reduce("+", lapply(svcm$mcs, .computeC, svcm$env_comp))
+  if(dropmiss) {
+    M <- M[svcm$dat$keepy]
+  }
+  return(M)
+}
+
+#' Model implied covariance matrix
+#' @description Compute model implied covariance matrix.
+#' @export
+#' @param svcm an instance of an \code{svcm} model.
+#' @param dropmiss drop expectation for missing values?
+#' @return matrix of (co)variances.
+expectedS <- function(svcm, dropmiss = T) {
+  S <- Reduce("+", lapply(svcm$svcs, .computeC, svcm$env_comp))
+  if(dropmiss) {
+    S <- S[svcm$dat$keepy, svcm$dat$keepy]
+  }
+  return(S)
 }

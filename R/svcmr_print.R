@@ -47,7 +47,7 @@ print.mc <- function(x, ...) {
 #' @export
 #' @param x An object of type summary.svc.
 #' @param ... Not used
-print.summary.fitm <- function(x, ...) {
+print.summary.svcm <- function(x, ...) {
   print(format(c("Log likelihood" = x$logl,
                  "Deviance" = x$dev,
                  "AIC" = x$AIC,
