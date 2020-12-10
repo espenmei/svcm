@@ -4,13 +4,15 @@
 \alias{compute}
 \title{Computes functions of parameters}
 \usage{
-compute(object, ...)
+compute(object, form, ...)
 }
 \arguments{
-\item{object}{Either a model of type \code{svcm} or a fitted model of type \code{fitm}.}
+\item{object}{An object of class \code{svcm}.}
 
-\item{...}{Further function arguments.}
+\item{form}{An expression to be evaluated.}
+
+\item{...}{Not used.}
 }
 \description{
-\code{compute} is a generic function for evaluating expressions containing functions of parameters in models.
+Evaluates expressions containing functions of model parameters in objects of class \code{svcm}.
 }

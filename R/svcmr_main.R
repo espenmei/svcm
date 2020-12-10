@@ -25,7 +25,7 @@
 #' @param nrow Number of matrix rows.
 #' @param ncol Number of matrix columns.
 #' @param labels Vector/matrix with parameter labels. Equal characters defines equality constraints.
-#' @param values Vector/matrix with parameter values. Values for free parameters are used as starting values during optimization
+#' @param values Vector/matrix with parameter values. Values for free parameters are used as starting values for optimization
 #' and values for fixed parameters are constants during optimization.
 #' @param free Vector or matrix of logical values defining whether parameters are free or not.
 #' @param name Character giving name to model object.
@@ -247,7 +247,7 @@ datm <- function(Y) {
 #' @description fits a \code{svcm} model.
 #' @export
 #' @param svcm an object of class \code{svcm}.
-#' @param se dhould standard errors be computed?
+#' @param se should standard errors be computed?
 #' @param ... arguments passed to \code{nlminb}.
 #' @return an object of class \code{svcm}.
 fitm <- function(svcm, se = FALSE, ...) {

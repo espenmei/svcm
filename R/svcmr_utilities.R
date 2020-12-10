@@ -1,35 +1,12 @@
-
-#' Computes functions of parameters
-#' @description \code{compute} is a generic function for evaluating expressions containing functions of parameters in models.
-#' @export
-#' @param object Either a model of type \code{svcm} or a fitted model of type \code{fitm}.
-#' @param ... Further function arguments.
-compute <- function(object, ...) {
-  UseMethod("compute")
-}
-
 #' Computes functions of parameters
 #' @description Evaluates expressions containing functions of model parameters in objects of class \code{svcm}.
 #' @export
 #' @param object An object of class \code{svcm}.
 #' @param form An expression to be evaluated.
 #' @param ... Not used.
-compute.svcm <- function(object, form, ...) {
+compute <- function(object, form, ...) {
   en <- lapply(object$pms, "[[", "values")
   names(en) <- lapply(object$pms, "[[", "name")
-  res <- eval(substitute(form), envir = en)
-  return(res)
-}
-
-#' Computes functions of parameters
-#' @description Evaluates expressions containing functions of model parameters in objects of class \code{fitm}.
-#' @export
-#' @param object An object of class \code{fitm}.
-#' @param form An expression to be evaluated.
-#' @param ... Not used.
-compute.fitm <- function(object, form, ...) {
-  en <- lapply(object$svcm$pms, "[[", "values")
-  names(en) <- lapply(object$svcm$pms, "[[", "name")
   res <- eval(substitute(form), envir = en)
   return(res)
 }
@@ -45,19 +22,21 @@ summary.svcm <- function(object, ...) {
   if(!is.null(object$H)) {
     ses <- sqrt(diag(vcov(object)))
   }
-  zVal <- theta / ses
   ll <- logLik(object)
+  zVal <- theta / ses
+  est <- data.frame(Estimate = theta,
+                    `Std. Error` = ses,
+                    `z value` = zVal,
+                    `Pr(>|z|)` =  pchisq(zVal^2, 1, lower.tail = FALSE),
+                    row.names = names(theta), check.names = FALSE)
+
   ret <- structure(list(N = attr(ll, "nobs"),
                         K = length(theta),
                         logl = ll,
                         dev = object$opt$objective,
                         AIC = AIC(object),
                         BIC = BIC(object),
-                        est = data.frame(Estimate = theta,
-                                         `Std. Error` = ses,
-                                         `z value` = zVal,
-                                         `Pr(>|z|)` =  pchisq(zVal^2, 1, lower.tail = FALSE),
-                                         row.names = names(theta), check.names = FALSE)),
+                        est = est),
                    class = "summary.svcm")
   return(ret)
 }
