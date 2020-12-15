@@ -3,11 +3,11 @@
 #' @export
 #' @param object An object of class \code{svcm}.
 #' @param form An expression to be evaluated.
-#' @param ... Not used.
-compute <- function(object, form, ...) {
-  en <- lapply(object$pms, "[[", "values")
-  names(en) <- lapply(object$pms, "[[", "name")
-  res <- eval(substitute(form), envir = en)
+compute <- function(object, form) {
+  #en <- lapply(object$pms, "[[", "values")
+  #names(en) <- lapply(object$pms, "[[", "name")
+  #res <- eval(substitute(form), envir = en)
+  res <- eval(substitute(form), envir = object$env_comp)
   return(res)
 }
 

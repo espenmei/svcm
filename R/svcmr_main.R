@@ -284,7 +284,7 @@ fitm <- function(svcm, se = FALSE, ...) {
 
   svcm$opt = fit
 
-  # Update svcm object with values from solution before return.
+  # Update pm objects with values from solution before return. Consider updating ic objects as well.
   for (i in seq_along(svcm$pms)) {
     svcm$pms[[i]]$values <- get(svcm$pms[[i]]$name, envir = svcm$env_comp)
   }

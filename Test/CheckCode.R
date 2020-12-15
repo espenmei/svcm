@@ -27,14 +27,15 @@ mod <- svcm(Y,
             pm(4, 4, "th", diag(T, 4), diag(1, 4), "TH"),
             pm(4, 4, "p", T, 1, "P"),
             pm(4, 1, "u", T, 0, "U"),
-            svc(P + TH, R = R),
+            ic(1 * P, "Pic"),
+            svc(Pic + TH, R = R),
             mc(U, X = X))
 mod <- fitm(mod, se = T, control = list(trace = 1))
 summary(mod)
 
 logLik(mod)
 logLik(fitlme)
-
+compute(mod, P + TH)
 # MIMIC Model
 # --------------------------
 W = matrix(NA, J, 2, dimnames = list(NULL, paste0("w", 1:2)))
