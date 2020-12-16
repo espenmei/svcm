@@ -4,14 +4,12 @@
 \alias{compute}
 \title{Computes functions of parameters}
 \usage{
-compute(object, form, ...)
+compute(object, form)
 }
 \arguments{
 \item{object}{An object of class \code{svcm}.}
 
 \item{form}{An expression to be evaluated.}
-
-\item{...}{Not used.}
 }
 \description{
 Evaluates expressions containing functions of model parameters in objects of class \code{svcm}.

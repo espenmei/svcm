@@ -22,7 +22,7 @@ pm(
 
 \item{free}{Vector or matrix of logical values defining whether parameters are free or not.}
 
-\item{values}{Vector/matrix with parameter values. Values for free parameters are used as starting values during optimization
+\item{values}{Vector/matrix with parameter values. Values for free parameters are used as starting values for optimization
 and values for fixed parameters are constants during optimization.}
 
 \item{name}{Character giving name to model object.}

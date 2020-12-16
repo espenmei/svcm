@@ -5,7 +5,7 @@ Authors@R:
     person(given = "Espen Moen",
            family = "Eilertsen",
            role = c("aut", "cre"),
-           email = "espeneil@outlook.com",
+           email = "e.m.eilertsen@psykologi.uio.no",
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 License: ?
@@ -15,6 +15,5 @@ RoxygenNote: 7.1.1
 Imports: 
     Matrix,
 	numDeriv,
-    sparseMVN,
 	methods,
 	stats

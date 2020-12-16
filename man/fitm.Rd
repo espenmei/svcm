@@ -9,7 +9,7 @@ fitm(svcm, se = FALSE, ...)
 \arguments{
 \item{svcm}{an object of class \code{svcm}.}
 
-\item{se}{dhould standard errors be computed?}
+\item{se}{should standard errors be computed?}
 
 \item{...}{arguments passed to \code{nlminb}.}
 }
