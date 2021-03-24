@@ -36,6 +36,8 @@ summary(mod)
 logLik(mod)
 logLik(fitlme)
 compute(mod, P + TH)
+compute(mod, Pic)
+
 # MIMIC Model
 # --------------------------
 W = matrix(NA, J, 2, dimnames = list(NULL, paste0("w", 1:2)))
