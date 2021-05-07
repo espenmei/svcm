@@ -292,7 +292,7 @@ fitm <- function(svcm, se = FALSE, ...) {
   # Hessian at minimum
   if(se) {
     message("Computing standard errors.")
-    svcm$H <-compHess(fit_objective, fit$par)
+    svcm$H <- compHess(fit_objective, fit$par)
   }
 
   return(svcm)

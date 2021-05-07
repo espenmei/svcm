@@ -92,9 +92,39 @@ mod2miss = svcm(Y,
                 svc(L %*% P %*% t(L) + TH, R = R),
                 mc(U, X = X),
                 mc(L %*% B, X = W))
-mod2miss = fitm(mod2miss, se = F, control = list(trace = 1))
+mod2miss = fitm(mod2miss, se = T, control = list(trace = 1))
 
 logLik(mod2miss)
 logLik(fitlavmiss)
 
 anova(mod, mod2miss)
+
+# Delta
+# --------------------------
+mod2missL = svcm(Y,
+                pm(4, 1, paste0("l", 1:4), c(F, T, T, T), 1, "L"),
+                pm(1, 1, "lp", T, 1, "LP"),
+                ic(LP %*% t(LP), name = "P"),
+                pm(4, 4, paste0("th", 1:4), diag(T, 4), diag(1, 4), "TH"),
+                pm(4, 1, paste0("u", 1:4), T, 0, "U"),
+                pm(1, 2, paste0("b", 1:2), T, 0, "B"),
+                svc(L %*% P %*% t(L) + TH, R = R),
+                mc(U, X = X),
+                mc(L %*% B, X = W))
+mod2missL = fitm(mod2missL, se = T)
+
+
+tra = function(theta) {
+  #theta[4] = theta[4]^2
+  #theta
+  #l = theta[1:3]
+  #c = l %*% t(l)
+  #c[lower.tri(c)]
+  theta[4]^2
+}
+
+J = numDeriv::jacobian(tra, mod2missL$opt$par)
+C = solve(0.5 * mod2missL$H)
+VC = t(J) %*% C %*% J
+sqrt(diag(VC))
+sqrt(J %*% C %*% t(J))
