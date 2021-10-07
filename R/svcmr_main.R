@@ -243,6 +243,14 @@ datm <- function(Y) {
             class = "datm")
 }
 
+theta <- function(svcm) {
+  # Vector of starting values
+  theta_start <- unlist(lapply(svcm$pms, .getFreeValues))
+  names(theta_start) <- unlist(lapply(svcm$pms, .getFreeLabels))
+  # Keep only one (first) when equal labels (equality constraints)
+  theta_start[!duplicated(names(theta_start))]
+}
+
 #' Fit a model
 #' @description fits a \code{svcm} model.
 #' @export
@@ -266,15 +274,11 @@ fitm <- function(svcm, se = FALSE, ...) {
     return(objective(svcm))
   }
 
-  # Set start values
-  theta_start <- unlist(lapply(svcm$pms, .getFreeValues))
-  names(theta_start) <- unlist(lapply(svcm$pms, .getFreeLabels))
-  # Keep only one (first) when equal labels (equality constraints)
-  theta_start_u <- theta_start[!duplicated(names(theta_start))]
   # optimize model
+  # wrap this in a conditional depending on ...
   cat("\niteration: objective:", names(theta_start_u), "\n")
   time_start <- proc.time()
-  fit <- nlminb(theta_start_u, fit_objective, ...)
+  fit <- nlminb(theta(svcm), fit_objective, ...)
   fit$time <- proc.time() - time_start
   if(fit$convergence != 0) {
     warning("Optimization may not have converged.",
