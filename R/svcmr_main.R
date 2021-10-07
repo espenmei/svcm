@@ -243,6 +243,11 @@ datm <- function(Y) {
             class = "datm")
 }
 
+#' Returns parameters of a model
+#' @description returns non-duplicated parameters of a \code{svcm} model.
+#' @export
+#' @param svcm an object of class \code{svcm}.
+#' @return vector of parameters.
 theta <- function(svcm) {
   # Vector of starting values
   theta_start <- unlist(lapply(svcm$pms, .getFreeValues))
