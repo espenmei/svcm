@@ -276,7 +276,7 @@ fitm <- function(svcm, se = FALSE, ...) {
 
   # optimize model
   # wrap this in a conditional depending on ...
-  cat("\niteration: objective:", names(theta_start_u), "\n")
+  #cat("\niteration: objective:", names(theta_start_u), "\n")
   time_start <- proc.time()
   fit <- nlminb(theta(svcm), fit_objective, ...)
   fit$time <- proc.time() - time_start
