@@ -5,7 +5,7 @@ library(lme4)
 # Random intercept model
 # --------------------------
 I = 4
-J = 10000
+J = 100
 Y = matrix(NA, J, I, dimnames = list(NULL, paste0("y", 1:I)))
 for(j in 1:J) {
   eta = rnorm(1)
@@ -30,13 +30,22 @@ mod <- svcm(Y,
             ic(1 * P, "Pic"),
             svc(Pic + TH, R = R),
             mc(U, X = X))
-mod <- fitm(mod, se = F, control = list(trace = 1))
+mod <- fitm(mod, se = T, control = list(trace = 1))
 summary(mod)
 
 logLik(mod)
 logLik(fitlme)
 compute(mod, P + TH)
 compute(mod, Pic)
+
+trans = function(x) {
+  x[3] / 4
+}
+
+Jz = jacobian(trans, theta(mod))
+VC2 = Jz %*% vcov(mod) %*% t(Jz)
+round(vcov(mod), 5)
+sqrt(diag(VC2))
 
 # MIMIC Model
 # --------------------------
@@ -46,7 +55,7 @@ for(j in 1:J) {
   w = rnorm(2)
   eta = sum(c(2, 1.5) * w) + rnorm(1)
   eps = rnorm(4)
-  Y[j, ] = c(1,0.5, 0.5, 0.7) *  eta + eps
+  Y[j, ] = c(1, 0.5, 0.5, 0.7) * eta + eps
   W[j, ] = w
 }
 datw = data.frame(Y, W)
@@ -68,12 +77,23 @@ mod2 = svcm(Y,
             svc(L %*% P %*% t(L) + TH, R = R),
             mc(U, X = X),
             mc(L %*% B, X = W))
-fit2 = fitm(mod2, se = F, control = list(trace = 1))
+fit2 = fitm(mod2, se = T, control = list(trace = 1))
 summary(fit2)
 
 logLik(fit2)
 logLik(fitlav)
 
+compute(fit2, B)
+trans2 = function(x) {
+  pos_b = which(grepl("b", names(theta(mod2))))
+  b = x[pos_b]
+  bmat = matrix(b, 1, 2)
+  bmat %*% (4 * diag(2))
+}
+
+trans2(fit2$opt$par)
+jz2 = jacobian(trans2, fit2$opt$par)
+jz2 %*% vcov(fit2) %*% t(jz2)
 # Missing
 # --------------------------
 Y[1:10, 1] = NA

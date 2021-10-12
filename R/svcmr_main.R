@@ -1,15 +1,15 @@
-#' Updates model objects
-#' @description Used during optimization for updating model objects in computing environment.
-#' @export
-#' @param mo model object.
-#' @param values free parameters.
-#' @param env_comp computing environment.
-.updateValues <- function(mo, values, env_comp) {
-  pos_free_mo <- which(mo$free) # positions of free values in mo
-  ind_values <- pmatch(mo$labels[pos_free_mo], names(values), duplicates.ok = TRUE) # Positions of pos_free_mo in values
-  mo$values[pos_free_mo] <- values[ind_values] # Update mo
-  assign(mo$name, mo$values, envir = env_comp) # update environment
-}
+# #' Updates model objects
+# #' @description Used during optimization for updating model objects in computing environment.
+# #' @export
+# #' @param mo model object.
+# #' @param values free parameters.
+# #' @param env_comp computing environment.
+#.updateValues <- function(mo, values, env_comp) {
+#  pos_free_mo <- which(mo$free) # positions of free values in mo
+#  ind_values <- pmatch(mo$labels[pos_free_mo], names(values), duplicates.ok = TRUE) # Positions of pos_free_mo in values
+#  mo$values[pos_free_mo] <- values[ind_values] # Update mo
+#  assign(mo$name, mo$values, envir = env_comp) # update environment
+#}
 
 .getFreeValues <- function(mo) {
   return(mo$values[mo$free])
@@ -18,6 +18,72 @@
 .getFreeLabels <- function(mo) {
   return(mo$labels[mo$free])
 }
+
+.update_pm <- function(pm, theta, env_comp) {
+  pos_free_pm <- which(pm$free) # positions of free values in pm
+  ind_theta <- pmatch(pm$labels[pos_free_pm], names(theta), duplicates.ok = TRUE) # Positions of pos_free_mo in values
+  pm$values[pos_free_pm] <- theta[ind_theta] # Update pm
+  assign(pm$name, pm$values, envir = env_comp) # update environment
+}
+
+.update_pms <- function(svcm, theta) {
+  lapply(svcm$pms, .update_pm, theta, svcm$env_comp)
+}
+
+.update_ic <- function(ic, env_comp) {
+  assign(ic$name, .computeC(ic, env_comp), envir = env_comp)
+}
+
+.update_ics <- function(svcm) {
+  lapply(svcm$ics, .update_ic, svcm$env_comp)
+}
+
+#' Model implied mean vector
+#' @description Compute model implied mean vector.
+#' @export
+#' @param svcm an instance of an \code{svcm} model.
+#' @param dropmiss drop expectation for missing values?
+#' @return vector of means.
+expectedM <- function(svcm, dropmiss = T) {
+  M <- Reduce("+", lapply(svcm$mcs, .computeC, svcm$env_comp))
+  if(dropmiss) {
+    M <- M[svcm$dat$keepy]
+  }
+  return(M)
+}
+
+#' Model implied covariance matrix
+#' @description Compute model implied covariance matrix.
+#' @export
+#' @param svcm an instance of an \code{svcm} model.
+#' @param dropmiss drop expectation for missing values?
+#' @return matrix of (co)variances.
+expectedS <- function(svcm, dropmiss = T) {
+  S <- Reduce("+", lapply(svcm$svcs, .computeC, svcm$env_comp))
+  if(dropmiss) {
+    S <- S[svcm$dat$keepy, svcm$dat$keepy]
+  }
+  return(S)
+}
+
+#' Generic update function
+#.update <- function(object, x, env, ...) {
+#  UseMethod(".update")
+#}
+
+#' Update function for pm objects
+#.update.pm <- function(object, x, env, ...) {
+#  pos_free_mo <- which(object$free) # positions of free values in mo
+#  ind_x <- pmatch(object$labels[pos_free_mo], names(x), duplicates.ok = TRUE) # Positions of pos_free_mo in values
+#  object$values[pos_free_mo] <- x[ind_x] # Update mo
+#  assign(object$name, object$values, envir = env)
+#}
+
+#' Update function for ic objects
+#' Denne er ikke riktig. Feil signatur. trenger ikke theta (x)
+#.update.ic <- function(object, x, env, ...) {
+#  assign(object$name, .computeC(x, env), envir = env)
+#}
 
 #' Constructor for parameter matrix
 #' @description Creates an object of type \code{pm} used to represent parameters in a model.
@@ -243,6 +309,7 @@ datm <- function(Y) {
             class = "datm")
 }
 
+
 #' Returns parameters of a model
 #' @description returns non-duplicated parameters of a \code{svcm} model.
 #' @export
@@ -273,10 +340,14 @@ fitm <- function(svcm, se = FALSE, ...) {
     stop("This model has already been fitted.")
   }
 
+  # just make a new function as in VCModels .updateParameter(svcm)
+  # objective(.updateParameters(svcm))
   fit_objective <- function(theta) {
-    lapply(svcm$pms, .updateValues, theta, svcm$env_comp)
-    lapply(svcm$ics, function(x) assign(x$name, .computeC(x, svcm$env_comp), envir = svcm$env_comp))
-    return(objective(svcm))
+    #lapply(svcm$pms, .updateValues, theta, svcm$env_comp)
+    #lapply(svcm$ics, function(x) assign(x$name, .computeC(x, svcm$env_comp), envir = svcm$env_comp))
+    .update_pms(svcm, theta) # update parameter matrices
+    .update_ics(svcm) # update / evaluate intermediate computations
+    return(objective(svcm)) # Total mean and covariance are updated in objective.
   }
 
   # optimize model
@@ -293,7 +364,7 @@ fitm <- function(svcm, se = FALSE, ...) {
 
   svcm$opt = fit
 
-  # Update pm objects with values from solution before return. Consider updating ic objects as well.
+  # Not sure this is necessary. Update pm objects with values from solution before return. Ics are update on the fly when called with compute.
   for (i in seq_along(svcm$pms)) {
     svcm$pms[[i]]$values <- get(svcm$pms[[i]]$name, envir = svcm$env_comp)
   }
@@ -339,30 +410,4 @@ compHess <- function(fit_objective, par, ...) {
   return(H)
 }
 
-#' Model implied mean vector
-#' @description Compute model implied mean vector.
-#' @export
-#' @param svcm an instance of an \code{svcm} model.
-#' @param dropmiss drop expectation for missing values?
-#' @return vector of means.
-expectedM <- function(svcm, dropmiss = T) {
-  M <- Reduce("+", lapply(svcm$mcs, .computeC, svcm$env_comp))
-  if(dropmiss) {
-    M <- M[svcm$dat$keepy]
-  }
-  return(M)
-}
 
-#' Model implied covariance matrix
-#' @description Compute model implied covariance matrix.
-#' @export
-#' @param svcm an instance of an \code{svcm} model.
-#' @param dropmiss drop expectation for missing values?
-#' @return matrix of (co)variances.
-expectedS <- function(svcm, dropmiss = T) {
-  S <- Reduce("+", lapply(svcm$svcs, .computeC, svcm$env_comp))
-  if(dropmiss) {
-    S <- S[svcm$dat$keepy, svcm$dat$keepy]
-  }
-  return(S)
-}

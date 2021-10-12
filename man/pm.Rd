@@ -2,7 +2,11 @@
 % Please edit documentation in R/svcmr_main.R
 \name{pm}
 \alias{pm}
-\title{Constructor for parameter matrix}
+\title{Generic update function
+Update function for pm objects
+Update function for ic objects
+Denne er ikke riktig. Feil signatur. trenger ikke theta (x)
+Constructor for parameter matrix}
 \usage{
 pm(
   nrow = NA,

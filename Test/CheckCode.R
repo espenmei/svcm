@@ -28,6 +28,7 @@ mod <- svcm(Y,
             pm(4, 4, "p", T, 1, "P"),
             pm(4, 1, "u", T, 0, "U"),
             ic(1 * P, "Pic"),
+            ic(3 * P, "Pic2"),
             svc(Pic + TH, R = R),
             mc(U, X = X))
 mod <- fitm(mod, se = T, control = list(trace = 1))
