@@ -100,8 +100,10 @@ anova.svcm <- function(object, ...) {
   logLiksu <- unlist(logLiks)
   #Dfs <- vapply(logLiks, attr, FUN.VALUE = numeric(1), "df")
   Dfs <- sapply(logLiks, attr, "df")
-  chisq <- 2 * c(NA, logLiksu[1] - logLiksu[-1])
-  dfChisq <- c(NA, Dfs[1] - Dfs[-1])
+  #chisq <- 2 * c(NA, logLiksu[1] - logLiksu[-1])
+  #dfChisq <- c(NA, Dfs[1] - Dfs[-1])
+  chisq <- 2 * c(NA, diff(logliksu))
+  dfChisq <- c(NA, diff(Dfs))
   pval <- stats::pchisq(chisq, dfChisq, lower.tail = F)
   vals <- data.frame(Df = Dfs,
                      AIC = sapply(fits, AIC),

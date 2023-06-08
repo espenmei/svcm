@@ -338,6 +338,8 @@ fitm <- function(svcm, se = FALSE, ...) {
     stop("This model has already been fitted.")
   }
 
+  # This could be an external function called updateModel that returns an updated model. Then objective(updatemodel(model, theta)) The hessia ncan be called more easily.
+  # Maybe dispatch the update functions
   fit_objective <- function(theta) {
     #lapply(svcm$pms, .updateValues, theta, svcm$env_comp)
     #lapply(svcm$ics, function(x) assign(x$name, .computeC(x, svcm$env_comp), envir = svcm$env_comp))
@@ -392,7 +394,7 @@ objective <- function(mod) {
   dev <- log(2*pi) * length(y) + deter + sum(rm * r2)
   return(dev)
 }
-
+# You should make this so that it can be called outside a model call. Either return fit_objective or change this to work on a model
 #' Compute hessian
 #' @description Computes hessian
 #' @export
