@@ -94,18 +94,23 @@ anova.svcm <- function(object, ...) {
   } else {
     fits <- list(object)
   }
-
+# C
   logLiks <- lapply(fits, logLik)
-  nobs <- sapply(logLiks, attr, "nobs")
+  #nobs <- sapply(logLiks, attr, "nobs")
   logLiksu <- unlist(logLiks)
-  #Dfs <- vapply(logLiks, attr, FUN.VALUE = numeric(1), "df")
-  Dfs <- sapply(logLiks, attr, "df")
-  #chisq <- 2 * c(NA, logLiksu[1] - logLiksu[-1])
-  #dfChisq <- c(NA, Dfs[1] - Dfs[-1])
-  chisq <- 2 * c(NA, diff(logliksu))
-  dfChisq <- c(NA, diff(Dfs))
+  dfs <- sapply(logLiks, attr, "df")
+
+  ord <- order(dfs)
+  logLiksu <- logLiksu[ord]
+  dfs <- dfs[ord]
+  fits <- fits[ord]
+  mNms <- mNms[ord]
+
+  chisq <- 2 * c(NA, diff(logLiksu))
+  dfChisq <- c(NA, diff(dfs))
   pval <- stats::pchisq(chisq, dfChisq, lower.tail = F)
-  vals <- data.frame(Df = Dfs,
+
+  vals <- data.frame(Df = dfs,
                      AIC = sapply(fits, AIC),
                      BIC = sapply(fits, BIC),
                      logLik = logLiksu,

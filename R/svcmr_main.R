@@ -19,6 +19,7 @@
   return(mo$labels[mo$free])
 }
 
+# Update both pm in environment and pm objects in model
 .update_pm <- function(pm, theta, env_comp) {
   pos_free_pm <- which(pm$free) # positions of free values in pm
   ind_theta <- pmatch(pm$labels[pos_free_pm], names(theta), duplicates.ok = TRUE) # Positions of pos_free_mo in values
@@ -278,11 +279,11 @@ svcm <- function(Y, ...) {
   }
 
   ret <- structure(list(dat = datm(Y),
-                        pms = pms,
+                        pms = pms, # is it really any point of storing other than pm? The rest can be
                         svcs = svcs,
                         mcs = mcs,
                         ics = ics,
-                        env_comp = new.env(), # Computing environment
+                        env_comp = new.env(), # Computing environment Should probably inherit prom parent environment to get relationship matrices too
                         opt = NULL,
                         H = NULL),
                    class = "svcm")
@@ -321,59 +322,72 @@ theta <- function(svcm) {
   theta_start[!duplicated(names(theta_start))] # Keep only one (first) when equal labels (equality constraints)
 }
 
+#' Update parameter matrices in environment from theta
+#' @description update all free elements in parameter matrices.
+#' @export
+#' @param mod An object of type \code{fitm}.
+#' @param theta A vector of parameter values.
+update_model <- function(mod, theta) {
+  .update_pms(mod, theta) # update parameter matrices
+  .update_ics(mod) # update / evaluate intermediate computations
+}
+
 #' Fit a model
 #' @description fits a \code{svcm} model.
 #' @export
-#' @param svcm an object of class \code{svcm}.
+#' @param mod an object of class \code{svcm}.
 #' @param se should standard errors be computed?
 #' @param ... arguments passed to \code{nlminb}.
 #' @return an object of class \code{svcm}.
-fitm <- function(svcm, se = FALSE, ...) {
+fitm <- function(mod, se = FALSE, ...) {
 
-  if (!inherits(svcm, "svcm")) {
+  if(!inherits(mod, "svcm")) {
     stop("Only objects of type svcm are accepted.")
   }
 
-  if (!is.null(svcm$opt)) {
-    stop("This model has already been fitted.")
+  if(!is.null(mod$opt)) {
+    warning("This model has already been fitted.")
   }
 
   # This could be an external function called updateModel that returns an updated model. Then objective(updatemodel(model, theta)) The hessia ncan be called more easily.
   # Maybe dispatch the update functions
   fit_objective <- function(theta) {
-    #lapply(svcm$pms, .updateValues, theta, svcm$env_comp)
-    #lapply(svcm$ics, function(x) assign(x$name, .computeC(x, svcm$env_comp), envir = svcm$env_comp))
-    .update_pms(svcm, theta) # update parameter matrices
-    .update_ics(svcm) # update / evaluate intermediate computations
-    return(objective(svcm)) # total mean and covariance are updated in objective.
+    ##lapply(svcm$pms, .updateValues, theta, svcm$env_comp)
+    ##lapply(svcm$ics, function(x) assign(x$name, .computeC(x, svcm$env_comp), envir = svcm$env_comp))
+    #.update_pms(svcm, theta) # update parameter matrices
+    #.update_ics(svcm) # update / evaluate intermediate computations
+    update_model(mod, theta)
+    return(objective(mod)) # total mean and covariance are updated in objective.
   }
 
   # optimize model
   # wrap this in a conditional depending on ...
   #cat("\niteration: objective:", names(theta_start_u), "\n")
   time_start <- proc.time()
-  fit <- nlminb(theta(svcm), fit_objective, ...)
+  fit <- nlminb(theta(mod), fit_objective, ...)
   fit$time <- proc.time() - time_start
-  if (fit$convergence != 0) {
+  if(fit$convergence != 0) {
     warning("Optimization may not have converged.",
             " \nnlminb convergence code: ", fit$convergence,
             " \nnlminb message: ", fit$message)
   }
 
-  svcm$opt = fit
-
-  # Not sure this is necessary. Update pm objects with values from solution before return. Ics are update on the fly when called with compute.
-  for (i in seq_along(svcm$pms)) {
-    svcm$pms[[i]]$values <- get(svcm$pms[[i]]$name, envir = svcm$env_comp)
-  }
+  mod$opt = fit
 
   # Hessian at minimum
-  if (se) {
+  if(se) {
     message("Computing standard errors.")
-    svcm$H <- compHess(fit_objective, fit$par)
+    mod$H <- compHess(fit_objective, fit$par)
   }
 
-  return(svcm)
+  # Finite diff have now changed values in pms so need to be reset to fit$par before return
+  update_model(mod, fit$par)
+  # This is necessary because theta() uses these values. They are the starting values for optimisation
+  for(i in seq_along(mod$pms)) {
+    mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
+  }
+
+  return(mod)
 }
 
 #' Objective function
@@ -405,6 +419,31 @@ objective <- function(mod) {
 compHess <- function(fit_objective, par, ...) {
   H <- numDeriv::hessian(fit_objective, par, ...)
   dimnames(H) <- list(names(par), names(par))
+  return(H)
+}
+
+#' Compute hessian
+#' @description Computes hessian
+#' @export
+#' @param mod An object of type \code{fitm}
+#' @param ... Arguments passed to \code{numDeriv::hessian}.
+#' @return Hessian matrix.
+compHess2 <- function(mod, ...) {
+
+  fit_objective <- function(th) {
+    update_model(mod, th)
+    return(objective(mod))
+  }
+
+  H <- numDeriv::hessian(fit_objective, mod$opt$par)
+  dimnames(H) <- list(names(mod$opt$par), names(mod$opt$par))
+
+  # Finite diff have now changed values in pms so need to be reset to fit$par before return
+  update_model(mod, mod$opt$par)
+  # This is necessary because theta() uses these values. They are the starting values for optimisation
+  for(i in seq_along(mod$pms)) {
+    mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
+  }
   return(H)
 }
 

@@ -4,10 +4,10 @@
 \alias{fitm}
 \title{Fit a model}
 \usage{
-fitm(svcm, se = FALSE, ...)
+fitm(mod, se = FALSE, ...)
 }
 \arguments{
-\item{svcm}{an object of class \code{svcm}.}
+\item{mod}{an object of class \code{svcm}.}
 
 \item{se}{should standard errors be computed?}
 

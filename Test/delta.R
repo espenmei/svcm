@@ -5,38 +5,59 @@ library(lme4)
 # Random intercept model
 # --------------------------
 I = 4
-J = 100
+J = 1000
+K = 2
 Y = matrix(NA, J, I, dimnames = list(NULL, paste0("y", 1:I)))
 for(j in 1:J) {
-  eta = rnorm(1)
+  eta_j = rnorm(1)
+  eta_k = rnorm(2)
   eps = rnorm(4)
-  Y[j, ] = eta + eps
+  Y[j, ] = rep(eta_j, 4) + rep(eta_k, each = 2) + eps
 }
 Y[1:10, 1] = NA
-R = Matrix::Diagonal(J)
-X = matrix(1, J, 1)
-datw = data.frame(Y)
-datl = data.frame(y = c(Y), j = rep(1:J, times = I))
+datl = data.frame(y = c(Y), j = rep(1:J, times = I), k = rep(1:K, each = K * J))
 
 # lmer fit
-fitlme <- lmer(y~1+(1|j), datl, REML = F)
+fitlme <- lmer(y~1+(1|j)+(1|j:k), datl, REML = F)
+fitlme4 = lmer(y~1+(1|j), datl, REML = F)
+anova(fitlme4, fitlme)
 summary(fitlme)
 
 # svcmr
+R = Matrix::Diagonal(J)
+X = matrix(1, J, 1)
+datw = data.frame(Y)
 mod <- svcm(Y,
             pm(4, 4, "th", diag(T, 4), diag(1, 4), "TH"),
             pm(4, 4, "p", T, 1, "P"),
+            pm(2, 2, "l", T, 1, "L"),
             pm(4, 1, "u", T, 0, "U"),
-            ic(1 * P, "Pic"),
-            svc(Pic + TH, R = R),
+            ic(diag(2) %x%  L, "LL"),
+            svc((P + LL + TH), R),
             mc(U, X = X))
-mod <- fitm(mod, se = T, control = list(trace = 1))
+mod <- fitm(mod, se = F, control = list(trace = 1))
 summary(mod)
 
+mod4 <- svcm(Y,
+            pm(4, 4, "th", diag(T, 4), diag(1, 4), "TH"),
+            pm(4, 4, "p", T, 1, "P"),
+            pm(4, 1, "u", T, 0, "U"),
+            svc((P + TH), R),
+            mc(U, X = X))
+mod4 <- fitm(mod4, se = F, control = list(trace = 1))
+anova(mod, mod4)
+anova(mod4, mod)
+theta(mod)
+mod$opt$par
+compute(mod, P)
+
+-0.5 * objective(mod)
 logLik(mod)
+-0.5 * mod$opt$objective
 logLik(fitlme)
-compute(mod, P + TH)
-compute(mod, Pic)
+compute(mod, LL + P + TH)
+
+mod$H = compHess2(mod)
 
 trans = function(x) {
   x[3] / 4
@@ -46,6 +67,7 @@ Jz = jacobian(trans, theta(mod))
 VC2 = Jz %*% vcov(mod) %*% t(Jz)
 round(vcov(mod), 5)
 sqrt(diag(VC2))
+
 
 # MIMIC Model
 # --------------------------
