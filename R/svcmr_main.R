@@ -316,11 +316,9 @@ datm <- function(Y) {
 #' @param svcm an object of class \code{svcm}.
 #' @return vector of parameters.
 theta <- function(svcm) {
-  # Vector of starting values
   theta_start <- unlist(lapply(svcm$pms, .getFreeValues))
   names(theta_start) <- unlist(lapply(svcm$pms, .getFreeLabels))
-  # Keep only one (first) when equal labels (equality constraints)
-  theta_start[!duplicated(names(theta_start))]
+  theta_start[!duplicated(names(theta_start))] # Keep only one (first) when equal labels (equality constraints)
 }
 
 #' Fit a model
@@ -340,14 +338,12 @@ fitm <- function(svcm, se = FALSE, ...) {
     stop("This model has already been fitted.")
   }
 
-  # just make a new function as in VCModels .updateParameter(svcm)
-  # objective(.updateParameters(svcm))
   fit_objective <- function(theta) {
     #lapply(svcm$pms, .updateValues, theta, svcm$env_comp)
     #lapply(svcm$ics, function(x) assign(x$name, .computeC(x, svcm$env_comp), envir = svcm$env_comp))
     .update_pms(svcm, theta) # update parameter matrices
     .update_ics(svcm) # update / evaluate intermediate computations
-    return(objective(svcm)) # Total mean and covariance are updated in objective.
+    return(objective(svcm)) # total mean and covariance are updated in objective.
   }
 
   # optimize model
@@ -356,7 +352,7 @@ fitm <- function(svcm, se = FALSE, ...) {
   time_start <- proc.time()
   fit <- nlminb(theta(svcm), fit_objective, ...)
   fit$time <- proc.time() - time_start
-  if(fit$convergence != 0) {
+  if (fit$convergence != 0) {
     warning("Optimization may not have converged.",
             " \nnlminb convergence code: ", fit$convergence,
             " \nnlminb message: ", fit$message)
@@ -370,7 +366,7 @@ fitm <- function(svcm, se = FALSE, ...) {
   }
 
   # Hessian at minimum
-  if(se) {
+  if (se) {
     message("Computing standard errors.")
     svcm$H <- compHess(fit_objective, fit$par)
   }
