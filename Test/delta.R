@@ -1,6 +1,7 @@
-library(svcmr)
+library(svcm)
 library(lavaan)
 library(lme4)
+
 
 # Random intercept model
 # --------------------------
@@ -35,7 +36,7 @@ mod <- svcm(Y,
             ic(diag(2) %x%  L, "LL"),
             svc((P + LL + TH), R),
             mc(U, X = X))
-mod <- fitm(mod, se = F, control = list(trace = 1))
+mod <- fit_svcm(mod, se = F, control = list(trace = 1))
 summary(mod)
 
 mod4 <- svcm(Y,
@@ -44,7 +45,7 @@ mod4 <- svcm(Y,
             pm(4, 1, "u", T, 0, "U"),
             svc((P + TH), R),
             mc(U, X = X))
-mod4 <- fitm(mod4, se = F, control = list(trace = 1))
+mod4 <- fit_svcm(mod4, se = F, control = list(trace = 1))
 anova(mod, mod4)
 anova(mod4, mod)
 theta(mod)
@@ -56,8 +57,6 @@ logLik(mod)
 -0.5 * mod$opt$objective
 logLik(fitlme)
 compute(mod, LL + P + TH)
-
-mod$H = compHess2(mod)
 
 trans = function(x) {
   x[3] / 4

@@ -1,33 +1,34 @@
 #' Computes functions of parameters
 #' @description Evaluates expressions containing functions of model parameters in objects of class \code{svcm}.
 #' @export
-#' @param object An object of class \code{svcm}.
+#' @param mod an instance of an \code{svcm} model.
 #' @param form An expression to be evaluated.
-compute <- function(object, form) {
-  #en <- lapply(object$pms, "[[", "values")
-  #names(en) <- lapply(object$pms, "[[", "name")
-  #res <- eval(substitute(form), envir = en)
-  res <- eval(substitute(form), envir = object$env_comp)
+compute <- function(mod, form) {
+  res <- eval(substitute(form), envir = mod$env_comp)
   return(res)
 }
 
-#' Summary function for svcmr models.
-#' @description Summary function for class \code{"fitm"}.
+#' Summary function for svcm models.
+#' @description Summary function for class \code{"svcm"}.
 #' @export
-#' @param object An object of type \code{fitm}.
+#' @param object An object of type \code{svcm}.
 #' @param ... Not used.
 summary.svcm <- function(object, ...) {
+
+  if(is.null(object$opt)) {
+    stop("The model has not been fitted.")
+  }
   theta <- object$opt$par
   ses <- rep(NA, length(theta))
   if(!is.null(object$H)) {
     ses <- sqrt(diag(vcov(object)))
   }
   ll <- logLik(object)
-  zVal <- theta / ses
+  z <- theta / ses
   est <- data.frame(Estimate = theta,
                     `Std. Error` = ses,
-                    `z value` = zVal,
-                    `Pr(>|z|)` =  pchisq(zVal^2, 1, lower.tail = FALSE),
+                    `z value` = z,
+                    `Pr(>|z|)` =  pchisq(z^2, 1, lower.tail = FALSE),
                     row.names = names(theta), check.names = FALSE)
 
   ret <- structure(list(N = attr(ll, "nobs"),
@@ -56,19 +57,19 @@ logLik.svcm <- function(object, ...) {
 }
 
 #' Returns fitted model parameters.
-#' @description Returns fitted model parameters for fitm objects.
+#' @description Returns fitted model parameters for \code{svcm} objects.
 #' @export
-#' @param object An object of type fitm.
+#' @param object An object of type \code{svcm}.
 #' @param ... Not used.
-#' @return Fitted parameters.
+#' @return Vector of fitted parameters.
 coef.svcm <- function(object, ...) {
   return(object$opt$par)
 }
 
 #' Returns covariance matrix of fitted model parameters.
-#' @description Returns covariance matrix of fitted model parameters for fitm objects.
+#' @description Returns covariance matrix of fitted model parameters for \code{svcm} objects.
 #' @export
-#' @param object An object of type fitm.
+#' @param object An object of type \code{svcm}.
 #' @param ... Not used.
 #' @return Covariance matrix of fitted parameters.
 vcov.svcm <- function(object, ...) {

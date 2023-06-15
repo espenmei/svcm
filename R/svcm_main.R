@@ -1,72 +1,3 @@
-# #' Updates model objects
-# #' @description Used during optimization for updating model objects in computing environment.
-# #' @export
-# #' @param mo model object.
-# #' @param values free parameters.
-# #' @param env_comp computing environment.
-#.updateValues <- function(mo, values, env_comp) {
-#  pos_free_mo <- which(mo$free) # positions of free values in mo
-#  ind_values <- pmatch(mo$labels[pos_free_mo], names(values), duplicates.ok = TRUE) # Positions of pos_free_mo in values
-#  mo$values[pos_free_mo] <- values[ind_values] # Update mo
-#  assign(mo$name, mo$values, envir = env_comp) # update environment
-#}
-
-.getFreeValues <- function(mo) {
-  return(mo$values[mo$free])
-}
-
-.getFreeLabels <- function(mo) {
-  return(mo$labels[mo$free])
-}
-
-# Update both pm in environment and pm objects in model
-.update_pm <- function(pm, theta, env_comp) {
-  pos_free_pm <- which(pm$free) # positions of free values in pm
-  ind_theta <- pmatch(pm$labels[pos_free_pm], names(theta), duplicates.ok = TRUE) # Positions of pos_free_mo in values
-  pm$values[pos_free_pm] <- theta[ind_theta] # Update pm
-  assign(pm$name, pm$values, envir = env_comp) # update environment
-}
-
-.update_pms <- function(svcm, theta) {
-  lapply(svcm$pms, .update_pm, theta, svcm$env_comp)
-}
-
-.update_ic <- function(ic, env_comp) {
-  assign(ic$name, .computeC(ic, env_comp), envir = env_comp)
-}
-
-.update_ics <- function(svcm) {
-  lapply(svcm$ics, .update_ic, svcm$env_comp)
-}
-
-#' Model implied mean vector
-#' @description Compute model implied mean vector.
-#' @export
-#' @param svcm an instance of an \code{svcm} model.
-#' @param dropmiss drop expectation for missing values?
-#' @return vector of means.
-expectedM <- function(svcm, dropmiss = T) {
-  M <- Reduce("+", lapply(svcm$mcs, .computeC, svcm$env_comp))
-  if(dropmiss) {
-    M <- M[svcm$dat$keepy]
-  }
-  return(M)
-}
-
-#' Model implied covariance matrix
-#' @description Compute model implied covariance matrix.
-#' @export
-#' @param svcm an instance of an \code{svcm} model.
-#' @param dropmiss drop expectation for missing values?
-#' @return matrix of (co)variances.
-expectedS <- function(svcm, dropmiss = T) {
-  S <- Reduce("+", lapply(svcm$svcs, .computeC, svcm$env_comp))
-  if(dropmiss) {
-    S <- S[svcm$dat$keepy, svcm$dat$keepy]
-  }
-  return(S)
-}
-
 #' Generic update function
 #.update <- function(object, x, env, ...) {
 #  UseMethod(".update")
@@ -86,6 +17,127 @@ expectedS <- function(svcm, dropmiss = T) {
 #  assign(object$name, .computeC(x, env), envir = env)
 #}
 
+#' Return free values in parameter matrix as a vector
+#' @param pm parameter matrix object.
+.get_free_values <- function(pm) {
+  return(pm$values[pm$free])
+}
+
+#' Return labels of free values in parameter matrix as a vector
+#' @param pm parameter matrix object.
+.get_free_labels <- function(pm) {
+  return(pm$labels[pm$free])
+}
+
+#' Updates values in parameter matrix
+#' @description Used during optimization for updating free values in a parameter matrix in both computing environment and model object.
+#' @param pm parameter matrix object.
+#' @param theta vector of free model parameters.
+#' @param env_comp computing environment where the expression is evaluated and stored.
+.update_pm <- function(pm, theta, env_comp) {
+  pos_free_pm <- which(pm$free) # positions of free values in pm
+  ind_theta <- pmatch(pm$labels[pos_free_pm], names(theta), duplicates.ok = TRUE) # Positions of pos_free_pm in values
+  pm$values[pos_free_pm] <- theta[ind_theta] # Update pm
+  assign(pm$name, pm$values, envir = env_comp) # update environment
+}
+
+#' Updates all parameter matrix objects of a model
+#' @description Used during optimization for updating parameter matrices in computing environment and model object.
+#' @param mod an instance of an \code{svcm} model.
+#' @param theta vector of free model parameters.
+.update_pms <- function(mod, theta) {
+  lapply(mod$pms, .update_pm, theta, mod$env_comp)
+}
+
+#' Updates intermediate computations
+#' @description Used during optimization for computing expressions in \code{ic} objects.
+#' @param pm parameter matrix object.
+#' @param env_comp computing environment where the expression is evaluated and stored.
+.update_ic <- function(ic, env_comp) {
+  assign(ic$name, .compute(ic, env_comp), envir = env_comp)
+}
+
+#' Updates all intermediate computation objects of a model
+#' @description Used during optimization for updating intermediate computations in computing environment.
+#' @param mod an instance of an \code{svcm} model.
+.update_ics <- function(mod) {
+  lapply(mod$ics, .update_ic, mod$env_comp)
+}
+
+#' Generic compute function
+#' @description Internal functions used to evaluate expressions containing functions of model objects.
+#' @export
+#' @importFrom Matrix t
+#' @param object An object of type \code{mc} / \code{svc}.
+#' @param ... Further function arguments.
+.compute <- function(object, ...) {
+  UseMethod(".compute")
+}
+
+#' Compute function for mc object
+#' @description Internal function used to evaluate expressions containing objects of type \code{fixedmc}.
+#' @export
+#' @importFrom Matrix t
+#' @param object An object of type \code{mc}.
+#' @param env Computing environment.
+#' @param ... Not used.
+.compute.fixedmc <- function(object, env, ...) {
+  mci <- eval(object$form, env)
+  mu <- as.vector(Matrix::t(mci %*% object$Xt)) # Vec(t(B %*% t(X)))
+  return(mu)
+}
+
+#' Compute function for svc objects
+#' @description Internal function used to evaluate expressions containing objects of type \code{fixedsvc}.
+#' @export
+#' @param object An object of type \code{svc}.
+#' @param env Computing environment.
+#' @param ... Not used.
+.compute.fixedsvc <- function(object, env, ...) {
+  vci <- eval(object$form, env)
+  sigma <- vci %x% object$R
+  return(sigma)
+}
+
+#' Compute function for svc object.
+#' @description Internal function used to evaluate expressions containing objects of type \code{free}.
+#' @export
+#' @param object An object of type \code{free}.
+#' @param env Computing environment.
+#' @param ... Not used.
+.compute.free <- function(object, env, ...) {
+  res <- eval(object$form, env)
+  return(res)
+}
+
+#' Model implied mean vector
+#' @description Compute model implied mean vector.
+#' @export
+#' @param mod an instance of an \code{svcm} model.
+#' @param drop_miss drop expectation for missing values?
+#' @return vector of means.
+expected_mean <- function(mod, drop_miss = T) {
+  M <- Reduce("+", lapply(mod$mcs, .compute, mod$env_comp))
+  if(drop_miss) {
+    M <- M[mod$dat$keepy]
+  }
+  return(M)
+}
+
+#' Model implied covariance matrix
+#' @description Compute model implied covariance matrix.
+#' @export
+#' @param svcm an instance of an \code{svcm} model.
+#' @param drop_miss drop expectation for missing values?
+#' @return matrix of (co)variances.
+expected_cov <- function(svcm, drop_miss = T) {
+  S <- Reduce("+", lapply(svcm$svcs, .compute, svcm$env_comp))
+  if(drop_miss) {
+    S <- S[svcm$dat$keepy, svcm$dat$keepy]
+  }
+  return(S)
+}
+
 #' Constructor for parameter matrix
 #' @description Creates an object of type \code{pm} used to represent parameters in a model.
 #' @export
@@ -93,9 +145,9 @@ expectedS <- function(svcm, dropmiss = T) {
 #' @param ncol Number of matrix columns.
 #' @param labels Vector/matrix with parameter labels. Equal characters defines equality constraints.
 #' @param values Vector/matrix with parameter values. Values for free parameters are used as starting values for optimization
-#' and values for fixed parameters are constants during optimization.
-#' @param free Vector or matrix of logical values defining whether parameters are free or not.
-#' @param name Character giving name to model object.
+#' and values for fixed parameters are constant during optimization.
+#' @param free Vector or matrix of logical values defining parameters free or not.
+#' @param name Character giving name to model object. Used to reference the parameter matrix in computations.
 #' @return An object of class \code{pm}.
 #' @examples
 #' library(svcmr)
@@ -209,57 +261,13 @@ mc <- function(form, X = NULL) {
   return(ret)
 }
 .new_fixedmc <- function(form, X) {
-  .new_mc(form = form, X = X, Xt = t(X), class = "fixedmc")
+  .new_mc(form = form, Xt = t(X), class = "fixedmc")
 }
 .new_freemc <- function(form) {
   .new_mc(form = form, class = "free")
 }
 
-#' Generic compute function
-#' @description Internal functions used to evaluate expressions containing functions of model objects.
-#' @export
-#' @importFrom Matrix t
-#' @param object An object of type mc/svc.
-#' @param ... Further function arguments.
-.computeC <- function(object, ...) {
-  UseMethod(".computeC")
-}
 
-#' Compute function for mc object
-#' @description Internal function used to evaluate expressions containing objects of type \code{fixedmc}.
-#' @export
-#' @importFrom Matrix t
-#' @param object An object of type mc.
-#' @param env Computing environment.
-#' @param ... Not used.
-.computeC.fixedmc <- function(object, env, ...) {
-  mci <- eval(object$form, env)
-  mu <- as.vector(Matrix::t(mci %*% object$Xt)) # Vec(t(B %*% t(X)))
-  return(mu)
-}
-
-#' Compute function for svc objects
-#' @description Internal function used to evaluate expressions containing objects of type \code{fixedsvc}.
-#' @export
-#' @param object An object of type svc.
-#' @param env Computing environment.
-#' @param ... Not used.
-.computeC.fixedsvc <- function(object, env, ...) {
-  vci <- eval(object$form, env)
-  sigma <- vci %x% object$R
-  return(sigma)
-}
-
-#' Compute function for svc object.
-#' @description Internal function used to evaluate expressions containing objects of type \code{free}.
-#' @export
-#' @param object An object of type \code{free}.
-#' @param env Computing environment.
-#' @param ... Not used.
-.computeC.free <- function(object, env, ...) {
-  res <- eval(object$form, env)
-  return(res)
-}
 
 #' Creates a model
 #' @description Creates a new model
@@ -279,11 +287,11 @@ svcm <- function(Y, ...) {
   }
 
   ret <- structure(list(dat = datm(Y),
-                        pms = pms, # is it really any point of storing other than pm? The rest can be
+                        pms = pms, # is it really any point of storing other than pm?
                         svcs = svcs,
                         mcs = mcs,
                         ics = ics,
-                        env_comp = new.env(), # Computing environment Should probably inherit prom parent environment to get relationship matrices too
+                        env_comp = new.env(), # Computing environment Should probably inherit prom parent environment to get relationship matrices for fixed types
                         opt = NULL,
                         H = NULL),
                    class = "svcm")
@@ -317,8 +325,8 @@ datm <- function(Y) {
 #' @param svcm an object of class \code{svcm}.
 #' @return vector of parameters.
 theta <- function(svcm) {
-  theta_start <- unlist(lapply(svcm$pms, .getFreeValues))
-  names(theta_start) <- unlist(lapply(svcm$pms, .getFreeLabels))
+  theta_start <- unlist(lapply(svcm$pms, .get_free_values))
+  names(theta_start) <- unlist(lapply(svcm$pms, .get_free_labels))
   theta_start[!duplicated(names(theta_start))] # Keep only one (first) when equal labels (equality constraints)
 }
 
@@ -332,14 +340,21 @@ update_model <- function(mod, theta) {
   .update_ics(mod) # update / evaluate intermediate computations
 }
 
+fit_objective <- function(theta, mod) {
+  #.update_pms(svcm, theta) # update parameter matrices
+  #.update_ics(svcm) # update / evaluate intermediate computations
+  update_model(mod, theta)
+  return(objective(mod)) # total mean and covariance are updated in objective.
+}
+
 #' Fit a model
 #' @description fits a \code{svcm} model.
 #' @export
-#' @param mod an object of class \code{svcm}.
+#' @param mod an instance of an \code{svcm} model.
 #' @param se should standard errors be computed?
 #' @param ... arguments passed to \code{nlminb}.
 #' @return an object of class \code{svcm}.
-fitm <- function(mod, se = FALSE, ...) {
+fit_svcm <- function(mod, se = FALSE, ...) {
 
   if(!inherits(mod, "svcm")) {
     stop("Only objects of type svcm are accepted.")
@@ -349,22 +364,17 @@ fitm <- function(mod, se = FALSE, ...) {
     warning("This model has already been fitted.")
   }
 
-  # This could be an external function called updateModel that returns an updated model. Then objective(updatemodel(model, theta)) The hessia ncan be called more easily.
-  # Maybe dispatch the update functions
-  fit_objective <- function(theta) {
-    ##lapply(svcm$pms, .updateValues, theta, svcm$env_comp)
-    ##lapply(svcm$ics, function(x) assign(x$name, .computeC(x, svcm$env_comp), envir = svcm$env_comp))
-    #.update_pms(svcm, theta) # update parameter matrices
-    #.update_ics(svcm) # update / evaluate intermediate computations
-    update_model(mod, theta)
-    return(objective(mod)) # total mean and covariance are updated in objective.
-  }
+
 
   # optimize model
-  # wrap this in a conditional depending on ...
-  #cat("\niteration: objective:", names(theta_start_u), "\n")
+  #ctrl = get0("control", where = list(...))
+  #if(!is.null(ctrl$trace)) {
+    #if(ctrl$trace > 0) {
+      #cat("\niteration: objective:", names(theta(mod)), "\n")
+    #}
+  #}
   time_start <- proc.time()
-  fit <- nlminb(theta(mod), fit_objective, ...)
+  fit <- nlminb(theta(mod), fit_objective, mod = mod, ...)
   fit$time <- proc.time() - time_start
   if(fit$convergence != 0) {
     warning("Optimization may not have converged.",
@@ -377,12 +387,10 @@ fitm <- function(mod, se = FALSE, ...) {
   # Hessian at minimum
   if(se) {
     message("Computing standard errors.")
-    mod$H <- compHess(fit_objective, fit$par)
+    mod$H <- fd_hess_svcm(mod)
   }
-
-  # Finite diff have now changed values in pms so need to be reset to fit$par before return
-  update_model(mod, fit$par)
-  # This is necessary because theta() uses these values. They are the starting values for optimisation
+  # This is necessary because they are not updated during optimisation and theta() uses these values.
+  ## They are the starting values for optimisation and may be used to continue optimization. No need to update during optim.
   for(i in seq_along(mod$pms)) {
     mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
   }
@@ -397,8 +405,8 @@ fitm <- function(mod, se = FALSE, ...) {
 #' @return Twice negative log likelihood.
 objective <- function(mod) {
 
-  M <- expectedM(mod)
-  S <- expectedS(mod)
+  M <- expected_mean(mod)
+  S <- expected_cov(mod)
   y <- mod$dat$y[mod$dat$keepy]
 
   ch <- Matrix::Cholesky(S)
@@ -423,28 +431,21 @@ compHess <- function(fit_objective, par, ...) {
 }
 
 #' Compute hessian
-#' @description Computes hessian
+#' @description Computes hessian of parameters with finite differences
 #' @export
 #' @param mod An object of type \code{fitm}
 #' @param ... Arguments passed to \code{numDeriv::hessian}.
 #' @return Hessian matrix.
-compHess2 <- function(mod, ...) {
+fd_hess_svcm <- function(mod, ...) {
 
-  fit_objective <- function(th) {
-    update_model(mod, th)
-    return(objective(mod))
-  }
-
-  H <- numDeriv::hessian(fit_objective, mod$opt$par)
+  H <- numDeriv::hessian(fit_objective, mod$opt$par, mod = mod)
   dimnames(H) <- list(names(mod$opt$par), names(mod$opt$par))
 
-  # Finite diff have now changed values in pms so need to be reset to fit$par before return
+  # Finite diff have now changed values in pms so need to be reset to par before return
   update_model(mod, mod$opt$par)
-  # This is necessary because theta() uses these values. They are the starting values for optimisation
-  for(i in seq_along(mod$pms)) {
-    mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
-  }
+  # Dont think this is needed here as this should only be called on fitted models and these should already be updated solution
+  #for(i in seq_along(mod$pms)) {
+#    mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
+ # }
   return(H)
 }
-
-

@@ -1,13 +1,13 @@
-Package: svcmr
-Title: Fit Structured Variance Component Models With Relationship Matrices
-Version: 0.1
+Package: svcm
+Title: Structured Variance Component Models With Relationship Matrices
+Version: 0.2
 Authors@R: 
     person(given = "Espen Moen",
            family = "Eilertsen",
            role = c("aut", "cre"),
            email = "e.m.eilertsen@psykologi.uio.no",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: Fit variance component models with sparse relationship matrices.
 License: ?
 Encoding: UTF-8
 LazyData: true
