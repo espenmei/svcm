@@ -413,7 +413,7 @@ objective <- function(mod) {
   rm <- y - M
   r2 <- Matrix::solve(ch, rm)
   deter <- 2 * Matrix::determinant(ch)$modulus
-  dev <- log(2*pi) * length(y) + deter + sum(rm * r2)
+  dev <- log(2 * pi) * length(y) + deter + sum(rm * r2)
   return(dev)
 }
 # You should make this so that it can be called outside a model call. Either return fit_objective or change this to work on a model
