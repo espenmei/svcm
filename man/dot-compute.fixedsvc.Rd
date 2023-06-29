@@ -13,6 +13,9 @@
 
 \item{...}{Not used.}
 }
+\value{
+Matrix with covariances for an object of type \code{svc}.
+}
 \description{
 Internal function used to evaluate expressions containing objects of type \code{fixedsvc}.
 }

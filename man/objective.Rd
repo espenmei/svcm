@@ -7,7 +7,7 @@
 objective(mod)
 }
 \arguments{
-\item{mod}{An object of type \code{fitm}}
+\item{mod}{An object of type \code{svcm}}
 }
 \value{
 Twice negative log likelihood.

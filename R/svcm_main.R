@@ -17,14 +17,16 @@
 #  assign(object$name, .computeC(x, env), envir = env)
 #}
 
-#' Return free values in parameter matrix as a vector
+#' Free values in parameter matrix
 #' @param pm parameter matrix object.
+#' @return vector of free values in parameter matrix.
 .get_free_values <- function(pm) {
   return(pm$values[pm$free])
 }
 
-#' Return labels of free values in parameter matrix as a vector
+#' Labels of free values in parameter matrix
 #' @param pm parameter matrix object.
+#' @return vector of labels of free values in parameter matrix.
 .get_free_labels <- function(pm) {
   return(pm$labels[pm$free])
 }
@@ -81,9 +83,11 @@
 #' @param object An object of type \code{mc}.
 #' @param env Computing environment.
 #' @param ... Not used.
+#' @return vector with means for an object of type \code{mc}.
 .compute.fixedmc <- function(object, env, ...) {
   mci <- eval(object$form, env)
-  mu <- as.vector(Matrix::t(mci %*% object$Xt)) # Vec(t(B %*% t(X)))
+  #mu <- as.vector(Matrix::t(mci %*% object$Xt)) # Vec(t(B %*% t(X)))
+  mu <- object$X %*% Matrix::t(mci) # Vec(t(B %*% t(X)))
   return(mu)
 }
 
@@ -93,6 +97,7 @@
 #' @param object An object of type \code{svc}.
 #' @param env Computing environment.
 #' @param ... Not used.
+#' @return Matrix with covariances for an object of type \code{svc}.
 .compute.fixedsvc <- function(object, env, ...) {
   vci <- eval(object$form, env)
   sigma <- vci %x% object$R
@@ -117,7 +122,8 @@
 #' @param drop_miss drop expectation for missing values?
 #' @return vector of means.
 expected_mean <- function(mod, drop_miss = T) {
-  M <- Reduce("+", lapply(mod$mcs, .compute, mod$env_comp))
+  Mm <- Reduce("+", lapply(mod$mcs, .compute, mod$env_comp))
+  M = as.vector(Mm)
   if(drop_miss) {
     M <- M[mod$dat$keepy]
   }
@@ -150,7 +156,7 @@ expected_cov <- function(svcm, drop_miss = T) {
 #' @param name Character giving name to model object. Used to reference the parameter matrix in computations.
 #' @return An object of class \code{pm}.
 #' @examples
-#' library(svcmr)
+#' library(svcm)
 #' S <- pm(nrow = 2, ncol = 2,
 #'         labels = c("s11", "s12", "s12", "s22"),
 #'         values = c(2, 1, 1, 2),
@@ -196,7 +202,7 @@ ic <- function(form, name = character()) {
 #' @param R A relationship matrix. Should be a sparse matrix from the \code{Matrix} package.
 #' @return An object of class \code{svc}.
 #' @examples
-#' library(svcmr)
+#' library(svcm)
 #' R <- Matrix::Diagonal(100)
 #' L <- pm(nrow = 6, ncol = 2,
 #'         labels = paste0("l", 1:12),
@@ -238,7 +244,7 @@ svc <- function(form, R = NULL) {
 #' @param X A design matrix.
 #' @return An object of class \code{mc}.
 #' @examples
-#' library(svcmr)
+#' library(svcm)
 #' X <- cbind(1, rnorm(100))
 #' B <- pm(nrow = 6, ncol = 2,
 #'         labels = paste0("b", 1:12),
@@ -251,6 +257,10 @@ mc <- function(form, X = NULL) {
     ret <- .new_freemc(form = substitute(form))
   } else {
     stopifnot(!anyNA(X), is.numeric(X))
+    rm = Matrix::rankMatrix(X)
+    if(rm < min(dim(X))) {
+      warning("The matrix X is not of full rank.")
+    }
     ret <- .new_fixedmc(form = substitute(form), X = X)
   }
   return(ret)
@@ -261,13 +271,11 @@ mc <- function(form, X = NULL) {
   return(ret)
 }
 .new_fixedmc <- function(form, X) {
-  .new_mc(form = form, Xt = t(X), class = "fixedmc")
+  .new_mc(form = form, X = X, class = "fixedmc")
 }
 .new_freemc <- function(form) {
   .new_mc(form = form, class = "free")
 }
-
-
 
 #' Creates a model
 #' @description Creates a new model
@@ -286,7 +294,7 @@ svcm <- function(Y, ...) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
 
-  ret <- structure(list(dat = datm(Y),
+  ret <- structure(list(dat = dat_svcm(Y),
                         pms = pms, # is it really any point of storing other than pm?
                         svcs = svcs,
                         mcs = mcs,
@@ -295,29 +303,28 @@ svcm <- function(Y, ...) {
                         opt = NULL,
                         H = NULL),
                    class = "svcm")
+  update_model(ret, theta(ret))
   return(ret)
 }
 
 #' Create a object for storing data
-#' @description creates a \code{datm} object.
+#' @description creates a \code{dat_svcm} object for the response variable.
 #' @export
-#' @param Y data described by model.
-#' @return an object of class \code{datm}.
-datm <- function(Y) {
-  if (!is.numeric(Y)) {
+#' @param Y response data described by model.
+#' @return an object of class \code{dat_svcm}.
+dat_svcm <- function(Y) {
+  if(!is.numeric(Y)) {
     stop("Y must be numeric.")
   }
   # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
   y <- c(Y)
   # Find positions of non-missing values
   keepy <- !is.na(y)
-
   structure(list(Y = Y,
-                 y = y,
+                 y = y[keepy],
                  keepy = keepy),
-            class = "datm")
+            class = "dat_svcm")
 }
-
 
 #' Returns parameters of a model
 #' @description returns non-duplicated parameters of a \code{svcm} model.
@@ -341,8 +348,6 @@ update_model <- function(mod, theta) {
 }
 
 fit_objective <- function(theta, mod) {
-  #.update_pms(svcm, theta) # update parameter matrices
-  #.update_ics(svcm) # update / evaluate intermediate computations
   update_model(mod, theta)
   return(objective(mod)) # total mean and covariance are updated in objective.
 }
@@ -355,24 +360,24 @@ fit_objective <- function(theta, mod) {
 #' @param ... arguments passed to \code{nlminb}.
 #' @return an object of class \code{svcm}.
 fit_svcm <- function(mod, se = FALSE, ...) {
-
   if(!inherits(mod, "svcm")) {
     stop("Only objects of type svcm are accepted.")
   }
-
   if(!is.null(mod$opt)) {
     warning("This model has already been fitted.")
   }
 
-
-
   # optimize model
-  #ctrl = get0("control", where = list(...))
-  #if(!is.null(ctrl$trace)) {
-    #if(ctrl$trace > 0) {
-      #cat("\niteration: objective:", names(theta(mod)), "\n")
-    #}
-  #}
+  dots <- list(...)
+  ctrl <- exists("control", where = dots)
+  if(ctrl) {
+    ctrl <- get("control", dots)
+  }
+  if(!is.null(ctrl$trace)) {
+    if(ctrl$trace > 0) {
+      cat("\niter: objective:", names(theta(mod)), "\n", sep = "\t")
+    }
+  }
   time_start <- proc.time()
   fit <- nlminb(theta(mod), fit_objective, mod = mod, ...)
   fit$time <- proc.time() - time_start
@@ -381,8 +386,7 @@ fit_svcm <- function(mod, se = FALSE, ...) {
             " \nnlminb convergence code: ", fit$convergence,
             " \nnlminb message: ", fit$message)
   }
-
-  mod$opt = fit
+  mod$opt <- fit
 
   # Hessian at minimum
   if(se) {
@@ -401,19 +405,17 @@ fit_svcm <- function(mod, se = FALSE, ...) {
 #' Objective function
 #' @description Objective function
 #' @export
-#' @param mod An object of type \code{fitm}
+#' @param mod An object of type \code{svcm}
 #' @return Twice negative log likelihood.
 objective <- function(mod) {
-
   M <- expected_mean(mod)
   S <- expected_cov(mod)
-  y <- mod$dat$y[mod$dat$keepy]
 
-  ch <- Matrix::Cholesky(S)
-  rm <- y - M
-  r2 <- Matrix::solve(ch, rm)
-  deter <- 2 * Matrix::determinant(ch)$modulus
-  dev <- log(2 * pi) * length(y) + deter + sum(rm * r2)
+  cS <- Matrix::Cholesky(S)
+  r <- mod$dat$y - M
+  iSr <- Matrix::solve(cS, r) # inv(S) %*% r
+  ld <- 2 * Matrix::determinant(cS)$modulus # 2 x logdet(L) = logdet(S)
+  dev <- log(2 * pi) * length(y) + ld + sum(r * iSr)
   return(dev)
 }
 # You should make this so that it can be called outside a model call. Either return fit_objective or change this to work on a model
@@ -433,14 +435,13 @@ compHess <- function(fit_objective, par, ...) {
 #' Compute hessian
 #' @description Computes hessian of parameters with finite differences
 #' @export
-#' @param mod An object of type \code{fitm}
+#' @param mod An object of type \code{svcm}
 #' @param ... Arguments passed to \code{numDeriv::hessian}.
 #' @return Hessian matrix.
 fd_hess_svcm <- function(mod, ...) {
-
   H <- numDeriv::hessian(fit_objective, mod$opt$par, mod = mod)
-  dimnames(H) <- list(names(mod$opt$par), names(mod$opt$par))
-
+  pnms <- names(mod$opt$par)
+  dimnames(H) <- list(pnms, pnms)
   # Finite diff have now changed values in pms so need to be reset to par before return
   update_model(mod, mod$opt$par)
   # Dont think this is needed here as this should only be called on fitted models and these should already be updated solution

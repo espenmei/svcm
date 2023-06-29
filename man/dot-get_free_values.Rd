@@ -6,17 +6,20 @@
 Update function for pm objects
 Update function for ic objects
 Denne er ikke riktig. Feil signatur. trenger ikke theta (x)
-Return free values in parameter matrix as a vector}
+Free values in parameter matrix}
 \usage{
 .get_free_values(pm)
 }
 \arguments{
 \item{pm}{parameter matrix object.}
 }
+\value{
+vector of free values in parameter matrix.
+}
 \description{
 Generic update function
 Update function for pm objects
 Update function for ic objects
 Denne er ikke riktig. Feil signatur. trenger ikke theta (x)
-Return free values in parameter matrix as a vector
+Free values in parameter matrix
 }

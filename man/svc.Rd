@@ -18,7 +18,7 @@ An object of class \code{svc}.
 Creates a variance component object as a function of model objects and (optionally) a relationship matrix.
 }
 \examples{
-library(svcmr)
+library(svcm)
 R <- Matrix::Diagonal(100)
 L <- pm(nrow = 6, ncol = 2,
         labels = paste0("l", 1:12),

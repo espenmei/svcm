@@ -2,13 +2,16 @@
 % Please edit documentation in R/svcm_main.R
 \name{.get_free_labels}
 \alias{.get_free_labels}
-\title{Return labels of free values in parameter matrix as a vector}
+\title{Labels of free values in parameter matrix}
 \usage{
 .get_free_labels(pm)
 }
 \arguments{
 \item{pm}{parameter matrix object.}
 }
+\value{
+vector of labels of free values in parameter matrix.
+}
 \description{
-Return labels of free values in parameter matrix as a vector
+Labels of free values in parameter matrix
 }

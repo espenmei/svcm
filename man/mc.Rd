@@ -18,7 +18,7 @@ An object of class \code{mc}.
 Creates a mean component object used to define (part of) the mean structure in the model.
 }
 \examples{
-library(svcmr)
+library(svcm)
 X <- cbind(1, rnorm(100))
 B <- pm(nrow = 6, ncol = 2,
         labels = paste0("b", 1:12),

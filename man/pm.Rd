@@ -34,7 +34,7 @@ An object of class \code{pm}.
 Creates an object of type \code{pm} used to represent parameters in a model.
 }
 \examples{
-library(svcmr)
+library(svcm)
 S <- pm(nrow = 2, ncol = 2,
         labels = c("s11", "s12", "s12", "s22"),
         values = c(2, 1, 1, 2),
