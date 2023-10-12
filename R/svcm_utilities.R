@@ -50,7 +50,8 @@ summary.svcm <- function(object, ...) {
 #' @param ... Not used.
 logLik.svcm <- function(object, ...) {
   ll <- -0.5 * object$opt$objective
-  attr(ll, "nobs") <- length(object$dat$y[object$dat$keepy])
+  #attr(ll, "nobs") <- length(object$dat$y[object$dat$keepy])
+  attr(ll, "nobs") <- length(object$dat$y)
   attr(ll, "df") <- length(object$opt$par)
   class(ll) <- "logLik"
   return(ll)

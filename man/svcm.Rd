@@ -12,7 +12,7 @@ svcm(Y, ...)
 \item{...}{All relevant model, mean and variance components objects used to define the model.}
 }
 \value{
-An object of type svcm.
+An object of type \code{svcm}.
 }
 \description{
 Creates a new model

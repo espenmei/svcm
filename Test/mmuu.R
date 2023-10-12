@@ -28,6 +28,7 @@ fitlme <- lmer(y~0+(X1 + X2 + X3) : factor(vr) + (1|j)+(1|j:k), datl, REML = F)
 fitlme4 = lmer(y~1+(1|j), datl, REML = F)
 anova(fitlme4, fitlme)
 summary(fitlme)
+
 # svcmr
 R = Matrix::Diagonal(J)
 datw = data.frame(Y)
@@ -40,8 +41,9 @@ mod <- svcm(Y,
             svc((P + LL + TH), R),
             mc(U, X = X))
 .compute(mod$mcs[[1]], mod$env_comp)
-(svcm:::.compute(mod$mcs[[1]], mod$env_comp))
-
+svcm:::.compute(mod$mcs[[1]], mod$env_comp)
+svcm:::.compute.fixedmc(mod$mcs[[1]], mod$env_comp)
+expected_mean(mod)
 bench::bench_time({mod = fit_svcm(mod, se = F, control = list(trace = 1))})
 summary(mod)
 

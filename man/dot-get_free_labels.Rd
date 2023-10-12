@@ -7,7 +7,7 @@
 .get_free_labels(pm)
 }
 \arguments{
-\item{pm}{parameter matrix object.}
+\item{pm}{an instance of an \code{pm} object.}
 }
 \value{
 vector of labels of free values in parameter matrix.

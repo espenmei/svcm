@@ -7,7 +7,7 @@
 .compute(object, ...)
 }
 \arguments{
-\item{object}{An object of type \code{mc} / \code{svc}.}
+\item{object}{An object of type \code{mc} or \code{svc}.}
 
 \item{...}{Further function arguments.}
 }

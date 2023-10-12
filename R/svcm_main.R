@@ -1,39 +1,21 @@
-#' Generic update function
-#.update <- function(object, x, env, ...) {
-#  UseMethod(".update")
-#}
-
-#' Update function for pm objects
-#.update.pm <- function(object, x, env, ...) {
-#  pos_free_mo <- which(object$free) # positions of free values in mo
-#  ind_x <- pmatch(object$labels[pos_free_mo], names(x), duplicates.ok = TRUE) # Positions of pos_free_mo in values
-#  object$values[pos_free_mo] <- x[ind_x] # Update mo
-#  assign(object$name, object$values, envir = env)
-#}
-
-#' Update function for ic objects
-#' Denne er ikke riktig. Feil signatur. trenger ikke theta (x)
-#.update.ic <- function(object, x, env, ...) {
-#  assign(object$name, .computeC(x, env), envir = env)
-#}
 
 #' Free values in parameter matrix
-#' @param pm parameter matrix object.
-#' @return vector of free values in parameter matrix.
+#' @param pm an instance of an \code{pm} object.
+#' @return vector of values of free elements in parameter matrix (column wise)
 .get_free_values <- function(pm) {
   return(pm$values[pm$free])
 }
 
 #' Labels of free values in parameter matrix
-#' @param pm parameter matrix object.
-#' @return vector of labels of free values in parameter matrix.
+#' @param pm an instance of an \code{pm} object.
+#' @return vector of labels of free elements in parameter matrix (column wise).
 .get_free_labels <- function(pm) {
   return(pm$labels[pm$free])
 }
 
 #' Updates values in parameter matrix
 #' @description Used during optimization for updating free values in a parameter matrix in both computing environment and model object.
-#' @param pm parameter matrix object.
+#' @param pm an instance of an \code{pm} object.
 #' @param theta vector of free model parameters.
 #' @param env_comp computing environment where the expression is evaluated and stored.
 .update_pm <- function(pm, theta, env_comp) {
@@ -43,17 +25,17 @@
   assign(pm$name, pm$values, envir = env_comp) # update environment
 }
 
-#' Updates all parameter matrix objects of a model
+#' Updates all \code{pm} objects of a model
 #' @description Used during optimization for updating parameter matrices in computing environment and model object.
-#' @param mod an instance of an \code{svcm} model.
+#' @param m an instance of an \code{svcm} model.
 #' @param theta vector of free model parameters.
-.update_pms <- function(mod, theta) {
-  lapply(mod$pms, .update_pm, theta, mod$env_comp)
+.update_pms <- function(m, theta) {
+  lapply(m$pms, .update_pm, theta, m$env_comp)
 }
 
 #' Updates intermediate computations
 #' @description Used during optimization for computing expressions in \code{ic} objects.
-#' @param pm parameter matrix object.
+#' @param ic and instance of an \code{ic} object.
 #' @param env_comp computing environment where the expression is evaluated and stored.
 .update_ic <- function(ic, env_comp) {
   assign(ic$name, .compute(ic, env_comp), envir = env_comp)
@@ -70,7 +52,7 @@
 #' @description Internal functions used to evaluate expressions containing functions of model objects.
 #' @export
 #' @importFrom Matrix t
-#' @param object An object of type \code{mc} / \code{svc}.
+#' @param object An object of type \code{mc} or \code{svc}.
 #' @param ... Further function arguments.
 .compute <- function(object, ...) {
   UseMethod(".compute")
@@ -83,11 +65,10 @@
 #' @param object An object of type \code{mc}.
 #' @param env Computing environment.
 #' @param ... Not used.
-#' @return vector with means for an object of type \code{mc}.
+#' @return vector/matrix with means for an object of type \code{mc}.
 .compute.fixedmc <- function(object, env, ...) {
   mci <- eval(object$form, env)
-  #mu <- as.vector(Matrix::t(mci %*% object$Xt)) # Vec(t(B %*% t(X)))
-  mu <- object$X %*% Matrix::t(mci) # Vec(t(B %*% t(X)))
+  mu <- object$X %*% Matrix::t(mci) # Column means
   return(mu)
 }
 
@@ -123,7 +104,7 @@
 #' @return vector of means.
 expected_mean <- function(mod, drop_miss = T) {
   Mm <- Reduce("+", lapply(mod$mcs, .compute, mod$env_comp))
-  M = as.vector(Mm)
+  M = as.vector(Mm) # vec(Mm) = vec(X %*% t(B))
   if(drop_miss) {
     M <- M[mod$dat$keepy]
   }
@@ -256,8 +237,8 @@ mc <- function(form, X = NULL) {
   if(is.null(X)) {
     ret <- .new_freemc(form = substitute(form))
   } else {
-    stopifnot(!anyNA(X), is.numeric(X))
-    rm = Matrix::rankMatrix(X)
+    stopifnot(!anyNA(X), is.numeric(X)) # The last does fail for Matrix but not matrix
+    rm <- Matrix::rankMatrix(X)
     if(rm < min(dim(X))) {
       warning("The matrix X is not of full rank.")
     }
@@ -282,7 +263,7 @@ mc <- function(form, X = NULL) {
 #' @export
 #' @param Y Matrix of data described by model.
 #' @param ... All relevant model, mean and variance components objects used to define the model.
-#' @return An object of type svcm.
+#' @return An object of type \code{svcm}.
 svcm <- function(Y, ...) {
   # Extract only objects of type pm, svc, mc and ic and ignore anything else.
   dots <- list(...)
@@ -372,9 +353,7 @@ fit_svcm <- function(mod, se = FALSE, ...) {
   ctrl <- exists("control", where = dots)
   if(ctrl) {
     ctrl <- get("control", dots)
-  }
-  if(!is.null(ctrl$trace)) {
-    if(ctrl$trace > 0) {
+    if(!is.null(ctrl$trace) && ctrl$trace > 0) {
       cat("\niter: objective:", names(theta(mod)), "\n", sep = "\t")
     }
   }
@@ -398,7 +377,6 @@ fit_svcm <- function(mod, se = FALSE, ...) {
   for(i in seq_along(mod$pms)) {
     mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
   }
-
   return(mod)
 }
 
@@ -415,21 +393,8 @@ objective <- function(mod) {
   r <- mod$dat$y - M
   iSr <- Matrix::solve(cS, r) # inv(S) %*% r
   ld <- 2 * Matrix::determinant(cS)$modulus # 2 x logdet(L) = logdet(S)
-  dev <- log(2 * pi) * length(y) + ld + sum(r * iSr)
+  dev <- log(2 * pi) * length(r) + ld + sum(r * iSr)
   return(dev)
-}
-# You should make this so that it can be called outside a model call. Either return fit_objective or change this to work on a model
-#' Compute hessian
-#' @description Computes hessian
-#' @export
-#' @param fit_objective Function returned from \code{fitm} defining the objective function.
-#' @param par Parameter vector.
-#' @param ... Arguments passed to \code{numDeriv::hessian}.
-#' @return Hessian matrix.
-compHess <- function(fit_objective, par, ...) {
-  H <- numDeriv::hessian(fit_objective, par, ...)
-  dimnames(H) <- list(names(par), names(par))
-  return(H)
 }
 
 #' Compute hessian
@@ -446,7 +411,7 @@ fd_hess_svcm <- function(mod, ...) {
   update_model(mod, mod$opt$par)
   # Dont think this is needed here as this should only be called on fitted models and these should already be updated solution
   #for(i in seq_along(mod$pms)) {
-#    mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
- # }
+  #    mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
+  # }
   return(H)
 }

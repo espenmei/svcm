@@ -7,7 +7,7 @@
 .update_pm(pm, theta, env_comp)
 }
 \arguments{
-\item{pm}{parameter matrix object.}
+\item{pm}{an instance of an \code{pm} object.}
 
 \item{theta}{vector of free model parameters.}
 

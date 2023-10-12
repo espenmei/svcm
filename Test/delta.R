@@ -36,7 +36,7 @@ mod <- svcm(Y,
             ic(diag(2) %x%  L, "LL"),
             svc((P + LL + TH), R),
             mc(U, X = X))
-mod <- fit_svcm(mod, se = F, control = list(trace = 1))
+mod <- fit_svcm(mod, se = T, control = list(trace = 1))
 summary(mod)
 
 mod4 <- svcm(Y,
@@ -46,8 +46,16 @@ mod4 <- svcm(Y,
             svc((P + TH), R),
             mc(U, X = X))
 mod4 <- fit_svcm(mod4, se = F, control = list(trace = 1))
+
+mod6 <- svcm(Y,
+             pm(4, 4, "th", diag(T, 4), diag(1, 4), "TH"),
+             pm(4, 1, "u", T, 0, "U"),
+             svc(TH, R),
+             mc(U, X = X))
+mod6 <- fit_svcm(mod6, se = F, control = list(trace = 1))
+
 anova(mod, mod4)
-anova(mod4, mod)
+anova(mod4, mod, mod6)
 theta(mod)
 mod$opt$par
 compute(mod, P)

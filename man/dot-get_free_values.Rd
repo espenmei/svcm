@@ -2,24 +2,16 @@
 % Please edit documentation in R/svcm_main.R
 \name{.get_free_values}
 \alias{.get_free_values}
-\title{Generic update function
-Update function for pm objects
-Update function for ic objects
-Denne er ikke riktig. Feil signatur. trenger ikke theta (x)
-Free values in parameter matrix}
+\title{Free values in parameter matrix}
 \usage{
 .get_free_values(pm)
 }
 \arguments{
-\item{pm}{parameter matrix object.}
+\item{pm}{an instance of an \code{pm} object.}
 }
 \value{
 vector of free values in parameter matrix.
 }
 \description{
-Generic update function
-Update function for pm objects
-Update function for ic objects
-Denne er ikke riktig. Feil signatur. trenger ikke theta (x)
 Free values in parameter matrix
 }

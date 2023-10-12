@@ -2,7 +2,7 @@
 % Please edit documentation in R/svcm_main.R
 \name{.update_pms}
 \alias{.update_pms}
-\title{Updates all parameter matrix objects of a model}
+\title{Updates all \code{pm} objects of a model}
 \usage{
 .update_pms(mod, theta)
 }
