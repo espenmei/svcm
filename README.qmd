@@ -26,7 +26,7 @@ $$
 The genetic components $a_j$ represent a additive polygenic contribution to the common factor, and has covariance matrix $\sigma^2_a\bf{A}$. $\bf{A}$ is a sparse symmetric matrix describing genetic relatedness among individuals. When $\bf{A}$ cannot be arranged into small homogeneous block, this model cannot be expressed in common software for structural equation models. The environmental component is independent across individuals with covariance matrix $\sigma^2_e\bf{I}$. The model could also be written for the whole sample as
 
 $$
-\bf{Y} = \boldsymbol{x+\beta}'+
+\bf{Y} = \boldsymbol{x\beta}'+
 \boldsymbol{\eta}\boldsymbol{\lambda}'+ \bf{\Delta}.
 $$
 
