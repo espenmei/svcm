@@ -237,10 +237,12 @@ mc <- function(form, X = NULL) {
   if(is.null(X)) {
     ret <- .new_freemc(form = substitute(form))
   } else {
-    stopifnot(!anyNA(X), is.numeric(X)) # The last does fail for Matrix but not matrix
-    rm <- Matrix::rankMatrix(X)
-    if(rm < min(dim(X))) {
-      warning("The matrix X is not of full rank.")
+    stopifnot(!anyNA(X)) # is.numeric(X) fail for Matrix but not matrix
+    if(!is.null(dim(X))) { # Is matrix, not vector
+      rm <- Matrix::rankMatrix(X)
+      if(rm < min(dim(X))) {
+        warning("The matrix X is not of full rank.")
+      }
     }
     ret <- .new_fixedmc(form = substitute(form), X = X)
   }
@@ -295,7 +297,7 @@ svcm <- function(Y, ...) {
 #' @return an object of class \code{dat_svcm}.
 dat_svcm <- function(Y) {
   if(!is.numeric(Y)) {
-    stop("Y must be numeric.")
+    #stop("Y must be numeric.") # Doesnt work for Matrix types
   }
   # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
   y <- c(Y)
