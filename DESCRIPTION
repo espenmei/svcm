@@ -1,6 +1,6 @@
 Package: svcm
-Title: Structured Variance Component Models With Relationship Matrices
-Version: 0.2
+Title: Structured Variance Component Models
+Version: 0.4
 Authors@R: 
     person(given = "Espen Moen",
            family = "Eilertsen",
