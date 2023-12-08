@@ -22,12 +22,15 @@ $\boldsymbol{\beta}$ is a vector of intercepts, $\boldsymbol{\lambda}$ is a vect
 $$
 \eta_j = a_j + e_j.
 $$
+
 The genetic components $a_j$ represent a additive polygenic contribution to the common factor, and has covariance matrix $\sigma^2_a\bf{A}$. $\bf{A}$ is a sparse symmetric matrix describing genetic relatedness among individuals. When $\bf{A}$ cannot be arranged into small homogeneous block, this model cannot be expressed in common software for structural equation models. The environmental component is independent across individuals with covariance matrix $\sigma^2_e\bf{I}$. The model could also be written for the whole sample as
 
 $$
 \bf{Y} = \boldsymbol{x+\beta}'+
 \boldsymbol{\eta}\boldsymbol{\lambda}'+ \bf{\Delta}.
-$$ Across variables and individuals, the model implied covariance matrix can be described as
+$$
+
+Across variables and individuals, the model implied covariance matrix can be described as
 
 $$
 (\boldsymbol{\lambda\lambda'}\sigma^2_a)\otimes\bf{A}+

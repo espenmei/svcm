@@ -29,20 +29,23 @@ environmental component
 
 $$
 \eta_j = a_j + e_j.
-$$ The genetic components $a_j$ represent a additive polygenic
-contribution to the common factor, and has covariance matrix
-$\sigma^2_a\bf{A}$. $\bf{A}$ is a sparse symmetric matrix describing
-genetic relatedness among individuals. When $\bf{A}$ cannot be arranged
-into small homogeneous block, this model cannot be expressed in common
-software for structural equation models. The environmental component is
-independent across individuals with covariance matrix
-$\sigma^2_e\bf{I}$. The model could also be written for the whole sample
-as
+$$
+
+The genetic components $a_j$ represent a additive polygenic contribution
+to the common factor, and has covariance matrix $\sigma^2_a\bf{A}$.
+$\bf{A}$ is a sparse symmetric matrix describing genetic relatedness
+among individuals. When $\bf{A}$ cannot be arranged into small
+homogeneous block, this model cannot be expressed in common software for
+structural equation models. The environmental component is independent
+across individuals with covariance matrix $\sigma^2_e\bf{I}$. The model
+could also be written for the whole sample as
 
 $$
 \bf{Y} = \boldsymbol{x+\beta}'+
 \boldsymbol{\eta}\boldsymbol{\lambda}'+ \bf{\Delta}.
-$$ Across variables and individuals, the model implied covariance matrix
+$$
+
+Across variables and individuals, the model implied covariance matrix
 can be described as
 
 $$
@@ -119,15 +122,15 @@ m1 <- fit_svcm(m1, se = TRUE, control = list(trace = 10))
 
 
     iter: objective:    l2  l3  l4  Sa1 Se1 th11    th22    th33    th44    b1  b2  b3  b4  
-      0:     21670.779: 0.500000 0.500000 0.500000  1.00000  1.00000  1.00000  1.00000  1.00000  1.00000  0.00000  0.00000  0.00000  0.00000
-     10:     10604.141: 0.867177  1.12006  1.44169  2.11895  1.40718  1.83659  1.16146  1.17543 0.879168 -0.0608543 0.285527  1.56786 0.980783
-     20:     9592.7116: 0.447792 0.520538 0.849948  2.48137  1.37718  1.10695  1.05572  1.03906 0.881716  1.63752  1.79455  3.76144  3.70677
-     30:     9573.9094: 0.475462 0.547149 0.842655  2.47775  1.46748  1.16306  1.05576  1.04676 0.861814  1.90598  1.90675  3.93347  3.88661
-     40:     9572.7623: 0.479138 0.539592 0.841644  2.48820  1.51011  1.16558  1.04557  1.04026 0.858474  1.96786  1.93459  3.95975  3.93634
-     50:     9572.6268: 0.476961 0.537382 0.839826  2.51350  1.51146  1.16084  1.04814  1.04115 0.856988  1.98873  1.94416  3.97218  3.95696
-     60:     9572.6058: 0.477483 0.537880 0.840572  2.53468  1.50046  1.16511  1.04749  1.03951 0.856532  1.99697  1.94716  3.97684  3.96328
-     70:     9572.6035: 0.477073 0.537653 0.840460  2.55120  1.49044  1.16473  1.04718  1.03974 0.856807  1.99926  1.94828  3.97804  3.96522
-     80:     9572.6035: 0.477063 0.537632 0.840431  2.55201  1.48979  1.16466  1.04717  1.03977 0.856862  1.99956  1.94843  3.97820  3.96541
+      0:     21904.122: 0.500000 0.500000 0.500000  1.00000  1.00000  1.00000  1.00000  1.00000  1.00000  0.00000  0.00000  0.00000  0.00000
+     10:     10155.045: 0.827019 0.777851  1.34596  2.25117  1.20461  1.68512 0.993091  1.19810 0.983719 0.256173 0.613845  2.48003  1.70539
+     20:     9431.7154: 0.537764 0.456334 0.785880  2.63279  1.26836 0.905099 0.968953  1.05421  1.06679  1.85597  1.88869  3.97220  3.88008
+     30:     9419.0540: 0.519254 0.448742 0.844468  2.48543  1.16431  1.02036 0.909013  1.03865  1.00729  2.02755  1.97771  4.03884  4.01481
+     40:     9418.5412: 0.523799 0.451872 0.839308  2.43718  1.16234  1.03105 0.902872  1.03938  1.01187  2.05927  1.99590  4.05825  4.04711
+     50:     9418.5070: 0.525198 0.452832 0.840405  2.41241  1.17384  1.03536 0.903379  1.03813  1.00820  2.06877  2.00046  4.06201  4.05406
+     60:     9418.5016: 0.525543 0.452490 0.840704  2.39881  1.18186  1.03573 0.903324  1.03771  1.00818  2.07186  2.00215  4.06344  4.05670
+     70:     9418.5006: 0.525653 0.452579 0.840814  2.39005  1.18737  1.03639 0.903219  1.03769  1.00828  2.07358  2.00306  4.06422  4.05805
+     80:     9418.5006: 0.525690 0.452591 0.840847  2.38910  1.18781  1.03658 0.903193  1.03773  1.00829  2.07374  2.00316  4.06429  4.05819
 
     Computing standard errors.
 
@@ -138,20 +141,20 @@ summary(m1)
 ```
 
     Log likelihood       Deviance            AIC            BIC 
-         -4786.302       9572.604       9598.604       9675.789 
+         -4709.250       9418.501       9444.501       9521.686 
 
     Fitted parameters:
          Estimate Std. Error z value Pr(>|z|)
-    l2     0.4771     0.0235   20.28   <0.001
-    l3     0.5376     0.0243   22.11   <0.001
-    l4     0.8404     0.0292   28.73   <0.001
-    Sa1    2.5520     0.5182    4.92   <0.001
-    Se1    1.4898     0.4406    3.38   <0.001
-    th11   1.1647     0.1092   10.66   <0.001
-    th22   1.0472     0.0624   16.77   <0.001
-    th33   1.0398     0.0641   16.23   <0.001
-    th44   0.8569     0.0784   10.93   <0.001
-    b1     1.9996     0.1001   19.97   <0.001
-    b2     1.9484     0.0583   33.42   <0.001
-    b3     3.9782     0.0625   63.68   <0.001
-    b4     3.9654     0.0844   46.96   <0.001
+    l2     0.5257     0.0248   21.18   <0.001
+    l3     0.4526     0.0246   18.39   <0.001
+    l4     0.8409     0.0324   25.98   <0.001
+    Sa1    2.3890     0.4703    5.08   <0.001
+    Se1    1.1879     0.3914    3.03   0.0024
+    th11   1.0366     0.1069    9.70   <0.001
+    th22   0.9032     0.0569   15.88   <0.001
+    th33   1.0377     0.0611   16.98   <0.001
+    th44   1.0083     0.0847   11.91   <0.001
+    b1     2.0738     0.0949   21.84   <0.001
+    b2     2.0032     0.0581   34.50   <0.001
+    b3     4.0643     0.0550   73.89   <0.001
+    b4     4.0582     0.0823   49.34   <0.001
