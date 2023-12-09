@@ -29,6 +29,7 @@ $$
 $$
 
 Across variables and individuals, the covariance matrix implied by this model can be described as
+
 $$
 (\boldsymbol{\lambda\lambda'}\sigma^2_a)\otimes\bf{A}+
 (\boldsymbol{\lambda\lambda'}\sigma^2_e+\bf{\Theta})\otimes\bf{I}.
@@ -112,6 +113,8 @@ $$
 For the means, the terms in the sum are specified by adding objects returned from `mc()` to the model. $\mathbf B_i^{'}$ has rows equal to the number of columns of $\bf Y$, and columns equal to the columns of $\mathbf X_i$.
 
 The data is described with the normal distribution
+
 $$
 vec(\bf Y)\sim\mathcal{N}(vec(M),V).
 $$
+
