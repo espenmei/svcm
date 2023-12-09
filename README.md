@@ -41,16 +41,21 @@ across individuals with covariance matrix $\sigma^2_e\bf{I}$. The model
 could also be written for the whole sample as
 
 $$
-\bf{Y} = \boldsymbol{x+\beta}'+
+\bf{Y} = \boldsymbol{x\beta}'+
 \boldsymbol{\eta}\boldsymbol{\lambda}'+ \bf{\Delta}.
 $$
 
-Across variables and individuals, the model implied covariance matrix
-can be described as
-
-$$
+Across variables and individuals, the covariance matrix implied by this
+model can be described as $$
+\bf{V}=
 (\boldsymbol{\lambda\lambda'}\sigma^2_a)\otimes\bf{A}+
 (\boldsymbol{\lambda\lambda'}\sigma^2_e+\bf{\Theta})\otimes\bf{I}.
+$$ The mean vector implied by the model can be described as $$
+\boldsymbol{m} = vec(\boldsymbol{x\beta'}).
+$$
+
+Finally, the data is described with the normal distribution $$
+vec(Y) \sim \mathcal{N}(\boldsymbol{m},\bf{V}).
 $$
 
 ## Simulate data
@@ -90,8 +95,8 @@ parameter matrices to define the model implied covariance structure
 across variables. The argument `R =` is used to supply a relationship
 matrix describing the dependence across individuals. Notice also that
 `mc()` is used to define the mean structure. There is no limit to how
-many `svc()` and `mc()` objects that can be supplied, they will be added
-together to form the total mean and covariance structure.
+many `pm`, `svc` and `mc` objects that can be supplied, they will be
+added together to form the total mean and covariance structure.
 
 ``` r
 library(svcm)
@@ -122,15 +127,15 @@ m1 <- fit_svcm(m1, se = TRUE, control = list(trace = 10))
 
 
     iter: objective:    l2  l3  l4  Sa1 Se1 th11    th22    th33    th44    b1  b2  b3  b4  
-      0:     21904.122: 0.500000 0.500000 0.500000  1.00000  1.00000  1.00000  1.00000  1.00000  1.00000  0.00000  0.00000  0.00000  0.00000
-     10:     10155.045: 0.827019 0.777851  1.34596  2.25117  1.20461  1.68512 0.993091  1.19810 0.983719 0.256173 0.613845  2.48003  1.70539
-     20:     9431.7154: 0.537764 0.456334 0.785880  2.63279  1.26836 0.905099 0.968953  1.05421  1.06679  1.85597  1.88869  3.97220  3.88008
-     30:     9419.0540: 0.519254 0.448742 0.844468  2.48543  1.16431  1.02036 0.909013  1.03865  1.00729  2.02755  1.97771  4.03884  4.01481
-     40:     9418.5412: 0.523799 0.451872 0.839308  2.43718  1.16234  1.03105 0.902872  1.03938  1.01187  2.05927  1.99590  4.05825  4.04711
-     50:     9418.5070: 0.525198 0.452832 0.840405  2.41241  1.17384  1.03536 0.903379  1.03813  1.00820  2.06877  2.00046  4.06201  4.05406
-     60:     9418.5016: 0.525543 0.452490 0.840704  2.39881  1.18186  1.03573 0.903324  1.03771  1.00818  2.07186  2.00215  4.06344  4.05670
-     70:     9418.5006: 0.525653 0.452579 0.840814  2.39005  1.18737  1.03639 0.903219  1.03769  1.00828  2.07358  2.00306  4.06422  4.05805
-     80:     9418.5006: 0.525690 0.452591 0.840847  2.38910  1.18781  1.03658 0.903193  1.03773  1.00829  2.07374  2.00316  4.06429  4.05819
+      0:     22106.472: 0.500000 0.500000 0.500000  1.00000  1.00000  1.00000  1.00000  1.00000  1.00000  0.00000  0.00000  0.00000  0.00000
+     10:     10215.346: 0.836416 0.783884  1.32430  2.30893  1.30135  1.73818  1.11008  1.13220 0.883441 0.236877 0.586525  2.40862  1.73297
+     20:     9470.8411: 0.515797 0.493898 0.812449  2.38003  1.56757  1.00878 0.978941 0.994438 0.917176  1.68961  1.78277  3.83229  3.71360
+     30:     9445.9735: 0.516696 0.471899 0.811573  2.22885  1.71383 0.977803 0.997554  1.00774 0.933840  2.00202  1.97173  4.02065  3.99984
+     40:     9444.0691: 0.515197 0.475552 0.814056  2.19358  1.79692 0.963652 0.979031 0.997702 0.936235  2.07450  2.01172  4.06147  4.07139
+     50:     9443.9058: 0.513130 0.471452 0.812789  2.17720  1.82667 0.954312 0.979261 0.996704 0.941872  2.09843  2.02484  4.07148  4.09293
+     60:     9443.8766: 0.513794 0.472560 0.812841  2.17247  1.84118 0.958335 0.976913 0.996158 0.940334  2.10768  2.02915  4.07649  4.09982
+     70:     9443.8753: 0.513817 0.472672 0.812627  2.17101  1.84343 0.958403 0.976832 0.996103 0.940211  2.10994  2.03026  4.07737  4.10141
+     80:     9443.8751: 0.513790 0.472664 0.812676  2.17016  1.84520 0.958447 0.976831 0.996075 0.940197  2.11099  2.03080  4.07788  4.10225
 
     Computing standard errors.
 
@@ -141,20 +146,38 @@ summary(m1)
 ```
 
     Log likelihood       Deviance            AIC            BIC 
-         -4709.250       9418.501       9444.501       9521.686 
+         -4721.938       9443.875       9469.875       9547.061 
 
     Fitted parameters:
          Estimate Std. Error z value Pr(>|z|)
-    l2     0.5257     0.0248   21.18   <0.001
-    l3     0.4526     0.0246   18.39   <0.001
-    l4     0.8409     0.0324   25.98   <0.001
-    Sa1    2.3890     0.4703    5.08   <0.001
-    Se1    1.1879     0.3914    3.03   0.0024
-    th11   1.0366     0.1069    9.70   <0.001
-    th22   0.9032     0.0569   15.88   <0.001
-    th33   1.0377     0.0611   16.98   <0.001
-    th44   1.0083     0.0847   11.91   <0.001
-    b1     2.0738     0.0949   21.84   <0.001
-    b2     2.0032     0.0581   34.50   <0.001
-    b3     4.0643     0.0550   73.89   <0.001
-    b4     4.0582     0.0823   49.34   <0.001
+    l2     0.5138     0.0231   22.28   <0.001
+    l3     0.4727     0.0229   20.63   <0.001
+    l4     0.8127     0.0291   27.95   <0.001
+    Sa1    2.1702     0.4952    4.38   <0.001
+    Se1    1.8452     0.4427    4.17   <0.001
+    th11   0.9584     0.1056    9.08   <0.001
+    th22   0.9768     0.0596   16.39   <0.001
+    th33   0.9961     0.0594   16.76   <0.001
+    th44   0.9402     0.0804   11.70   <0.001
+    b1     2.1110     0.0965   21.88   <0.001
+    b2     2.0308     0.0591   34.37   <0.001
+    b3     4.0779     0.0565   72.12   <0.001
+    b4     4.1022     0.0812   50.55   <0.001
+
+## In general
+
+In general, **svcm** can fit models where the covariance matrix can be
+described as $$
+\bf{V}=\sum_{i=1}^{q}\mathbf{\Sigma}_i \otimes \mathbf{R}_i.
+$$ The terms in the sum are specified by adding objects returned from
+`svc()` to the model. $\mathbf \Sigma_i$ has dimension according to the
+number of columns of $\bf{Y}$ and describes dependence among variables.
+$\mathbf \Sigma_i$ is a function of parameters defined with `pm()` and
+can be specified flexibly using general functions available in **R**.
+$\mathbf{R}_i$ describe dependence across individuals and must be sparse
+symmetric matrices with known values.
+
+The means are described with a similar structure $$
+\bf{M}=\sum_{i=1}^{p} \mathbf{X}_i \mathbf{B'}.
+$$ For the means, the terms in the sum are specified by adding objects
+returned from `mc()` to the model.

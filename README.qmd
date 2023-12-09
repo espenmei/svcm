@@ -30,11 +30,20 @@ $$
 \boldsymbol{\eta}\boldsymbol{\lambda}'+ \bf{\Delta}.
 $$
 
-Across variables and individuals, the model implied covariance matrix can be described as
-
+Across variables and individuals, the covariance matrix implied by this model can be described as
 $$
+\bf{V}=
 (\boldsymbol{\lambda\lambda'}\sigma^2_a)\otimes\bf{A}+
 (\boldsymbol{\lambda\lambda'}\sigma^2_e+\bf{\Theta})\otimes\bf{I}.
+$$
+The mean vector implied by the model can be described as
+$$
+\boldsymbol{m} = vec(\boldsymbol{x\beta'}).
+$$
+
+Finally, the data is described with the normal distribution
+$$
+vec(Y) \sim \mathcal{N}(\boldsymbol{m},\bf{V}).
 $$
 
 ## Simulate data
@@ -66,8 +75,7 @@ Y <- x %*% t(b) + eta %*% t(l) + del
 ```
 
 ## Fit the model
-
-Below is an example of one way to fit this model using **svcm**. `pm()` is used to define parameters as matrices. `svc()` is used to define structured variance components. Notice that the expressions use parameter matrices to define the model implied covariance structure across variables. The argument `R =` is used to supply a relationship matrix describing the dependence across individuals. Notice also that `mc()` is used to define the mean structure. There is no limit to how many `svc()` and `mc()` objects that can be supplied, they will be added together to form the total mean and covariance structure.
+Below is an example of one way to fit this model using **svcm**. `pm()` is used to define parameters as matrices. `svc()` is used to define structured variance components. Notice that the expressions use parameter matrices to define the model implied covariance structure across variables. The argument `R =` is used to supply a relationship matrix describing the dependence across individuals. Notice also that `mc()` is used to define the mean structure. There is no limit to how many `pm`, `svc` and `mc` objects that can be supplied, they will be added together to form the total mean and covariance structure.
 
 ```{r fit1}
 library(svcm)
@@ -101,3 +109,17 @@ After the models is fitted, it can be inspected with `summary()`.
 ```{r look}
 summary(m1)
 ```
+
+## In general
+
+In general, **svcm** can fit models where the covariance matrix can be described as
+$$
+\bf{V}=\sum_{i=1}^{q}\mathbf{\Sigma}_i \otimes \mathbf{R}_i.
+$$
+The terms in the sum are specified by adding objects returned from `svc()` to the model. $\mathbf \Sigma_i$ has dimension according to the number of columns of $\bf{Y}$ and describes dependence among variables. $\mathbf \Sigma_i$ is a function of parameters defined with `pm()` and can be specified flexibly using general functions available in **R**. $\mathbf{R}_i$ describe dependence across individuals and must be sparse symmetric matrices with known values.
+
+The means are described with a similar structure
+$$
+\bf{M}=\sum_{i=1}^{p} \mathbf{X}_i \mathbf{B'}.
+$$
+For the means, the terms in the sum are specified by adding objects returned from `mc()` to the model. 
