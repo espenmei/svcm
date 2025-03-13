@@ -21,7 +21,7 @@
 .update_pm <- function(pm, theta, env_comp) {
   pos_free_pm <- which(pm$free) # positions of free values in pm
   ind_theta <- pmatch(pm$labels[pos_free_pm], names(theta), duplicates.ok = TRUE) # Positions of pos_free_pm in values
-  pm$values[pos_free_pm] <- theta[ind_theta] # Update pm
+  pm$values[pos_free_pm] <- theta[ind_theta] # Update pm # Dette er jo ikke n??dvendig f??r optim er ferdig. Dette objectet g??r jo bare til gc uansett
   assign(pm$name, pm$values, envir = env_comp) # update environment
 }
 
@@ -400,12 +400,14 @@ objective <- function(mod) {
 }
 
 #' Compute hessian
-#' @description Computes hessian of parameters with finite differences
+#' @description Computes hessian of parameters with finite differences.
 #' @export
 #' @param mod An object of type \code{svcm}
 #' @param ... Arguments passed to \code{numDeriv::hessian}.
 #' @return Hessian matrix.
 fd_hess_svcm <- function(mod, ...) {
+  # Her må du få sjekket om hessioan koøøde med modellen
+  # Da bør du heller ta en kopi. Også for jacobian KOmmer an på om de peker til samme env.
   H <- numDeriv::hessian(fit_objective, mod$opt$par, mod = mod)
   pnms <- names(mod$opt$par)
   dimnames(H) <- list(pnms, pnms)
@@ -416,4 +418,27 @@ fd_hess_svcm <- function(mod, ...) {
   #    mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
   # }
   return(H)
+}
+
+#' Compute jacobian of expression
+#' @description Computes jacobian of expression containing parameter matrices with finite differences. The output should be a vector.
+#' Note that the jacobian is computed with regard to all free parameters in the model.
+#' @export
+#' @param mod An object of type \code{svcm}
+#' @param form An expression for the calculation.
+#' @param ... Arguments passed to \code{numDeriv::hessian}.
+#' @return Jacobian matrix.
+fd_jacobian_svcm <- function(mod, form, ...) {
+  mod_tmp <- mod
+  prs <- substitute(form)
+  test_form <- eval(prs, mod_tmp$env_comp)
+  if(!is.vector(test_form)) {
+    stop("Only implemented for vector-valued functions/expressions")
+  }
+  fu <- funxtion(th) {
+    updat_model(mod_tmp, th)
+    res <- eval(prs, envir = mod_tmp$env_comp)
+  }
+  # Kan gi kolonnene navn fra theta
+  numDeriv::jacobian(fu, theta(mod_comp))
 }
