@@ -435,7 +435,7 @@ fd_jacobian_svcm <- function(mod, form, ...) {
   if(!is.vector(test_form)) {
     stop("Only implemented for vector-valued functions/expressions")
   }
-  fu <- funxtion(th) {
+  fu <- function(th) {
     updat_model(mod_tmp, th)
     res <- eval(prs, envir = mod_tmp$env_comp)
   }
