@@ -4,10 +4,10 @@
 \alias{.update_pms}
 \title{Updates all \code{pm} objects of a model}
 \usage{
-.update_pms(mod, theta)
+.update_pms(m, theta)
 }
 \arguments{
-\item{mod}{an instance of an \code{svcm} model.}
+\item{m}{an instance of an \code{svcm} model.}
 
 \item{theta}{vector of free model parameters.}
 }

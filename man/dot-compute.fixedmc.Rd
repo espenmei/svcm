@@ -14,7 +14,7 @@
 \item{...}{Not used.}
 }
 \value{
-vector with means for an object of type \code{mc}.
+vector/matrix with means for an object of type \code{mc}.
 }
 \description{
 Internal function used to evaluate expressions containing objects of type \code{fixedmc}.

@@ -10,7 +10,7 @@
 \item{pm}{an instance of an \code{pm} object.}
 }
 \value{
-vector of labels of free values in parameter matrix.
+vector of labels of free elements in parameter matrix (column wise).
 }
 \description{
 Labels of free values in parameter matrix

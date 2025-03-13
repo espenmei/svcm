@@ -7,9 +7,9 @@
 .update_ic(ic, env_comp)
 }
 \arguments{
-\item{env_comp}{computing environment where the expression is evaluated and stored.}
+\item{ic}{and instance of an \code{ic} object.}
 
-\item{pm}{parameter matrix object.}
+\item{env_comp}{computing environment where the expression is evaluated and stored.}
 }
 \description{
 Used during optimization for computing expressions in \code{ic} objects.
