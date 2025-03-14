@@ -21,7 +21,7 @@
 .update_pm <- function(pm, theta, env_comp) {
   pos_free_pm <- which(pm$free) # positions of free values in pm
   ind_theta <- pmatch(pm$labels[pos_free_pm], names(theta), duplicates.ok = TRUE) # Positions of pos_free_pm in values
-  pm$values[pos_free_pm] <- theta[ind_theta] # Update pm # Dette er jo ikke n??dvendig f??r optim er ferdig. Dette objectet g??r jo bare til gc uansett
+  pm$values[pos_free_pm] <- theta[ind_theta]
   assign(pm$name, pm$values, envir = env_comp) # update environment
 }
 
@@ -436,9 +436,10 @@ fd_jacobian_svcm <- function(mod, form, ...) {
     stop("Only implemented for vector-valued functions/expressions")
   }
   fu <- function(th) {
-    updat_model(mod_tmp, th)
+    update_model(mod_tmp, th)
     res <- eval(prs, envir = mod_tmp$env_comp)
   }
-  # Kan gi kolonnene navn fra theta
-  numDeriv::jacobian(fu, theta(mod_comp))
+  J <- numDeriv::jacobian(fu, theta(mod_tmp))
+  colnames(J) <- names(theta(mod_tmp))
+  return(J)
 }

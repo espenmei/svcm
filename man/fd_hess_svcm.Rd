@@ -15,5 +15,5 @@ fd_hess_svcm(mod, ...)
 Hessian matrix.
 }
 \description{
-Computes hessian of parameters with finite differences
+Computes hessian of parameters with finite differences.
 }

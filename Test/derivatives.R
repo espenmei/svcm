@@ -2,7 +2,6 @@ library(svcm)
 library(lavaan)
 library(lme4)
 
-
 # Random intercept model
 # --------------------------
 I = 4
@@ -20,15 +19,13 @@ datl = data.frame(y = c(Y), j = rep(1:J, times = I), k = rep(1:K, each = K * J))
 
 # lmer fit
 fitlme <- lmer(y~1+(1|j)+(1|j:k), datl, REML = F)
-fitlme4 = lmer(y~1+(1|j), datl, REML = F)
-anova(fitlme4, fitlme)
 summary(fitlme)
 
 # svcmr
 R = Matrix::Diagonal(J)
 X = matrix(1, J, 1)
 datw = data.frame(Y)
-mod <- svcm(Y,
+m <- svcm(Y,
             pm(4, 4, "th", diag(T, 4), diag(1, 4), "TH"),
             pm(4, 4, "p", T, 1, "P"),
             pm(2, 2, "l", T, 1, "L"),
@@ -36,8 +33,16 @@ mod <- svcm(Y,
             ic(diag(2) %x%  L, "LL"),
             svc((P + LL + TH), R),
             mc(U, X = X))
-mod <- fit_svcm(mod, se = T, control = list(trace = 1))
-summary(mod)
+m <- fit_svcm(m, se = T, control = list(trace = 1))
+summary(m)
+m2 = m
+H = fd_hess_svcm(m2)
+J = fd_jacobian_svcm(m2, as.vector(U))
+J %*% H %*% t(J)
+all.equal(theta(m), theta(m2))
+all.equal(compute(m, L), compute(m2, L))
+
+
 
 mod4 <- svcm(Y,
             pm(4, 4, "th", diag(T, 4), diag(1, 4), "TH"),
