@@ -3,6 +3,18 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Eilertsen
     given-names: Espen Moen
-title: "svcm - Fit structured variance component models with sparse relationship matrices"
-version: 0.4.0
-date-released: 2021-10-11
+    email: e.m.eilertsen@psykologi.uio.no
+    orcid: https://orcid.org/0000-0003-3444-4251
+title: "svcm: Structured Variance Component Models"
+abstract: "An R package for fitting variance component models with sparse relationship matrices. Supports structured covariance modelling through flexible model specification."
+version: 0.4
+date-released: 2026-04-08
+license: MIT
+url: https://github.com/espenmei/svcm
+repository-code: https://github.com/espenmei/svcm
+type: software
+keywords:
+  - variance components
+  - structured covariance
+  - sparse matrices
+  - R package

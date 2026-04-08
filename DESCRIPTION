@@ -6,9 +6,9 @@ Authors@R:
            family = "Eilertsen",
            role = c("aut", "cre"),
            email = "e.m.eilertsen@psykologi.uio.no",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           comment = c(ORCID = "0000-0003-3444-4251"))
 Description: Fit variance component models with sparse relationship matrices.
-License: ?
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
