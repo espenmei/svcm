@@ -50,7 +50,6 @@ summary.svcm <- function(object, ...) {
 #' @param ... Not used.
 logLik.svcm <- function(object, ...) {
   ll <- -0.5 * object$opt$objective
-  #attr(ll, "nobs") <- length(object$dat$y[object$dat$keepy])
   attr(ll, "nobs") <- length(object$dat$y)
   attr(ll, "df") <- length(object$opt$par)
   class(ll) <- "logLik"
@@ -96,7 +95,6 @@ anova.svcm <- function(object, ...) {
   } else {
     fits <- list(object)
   }
-# C
   logLiks <- lapply(fits, logLik)
   #nobs <- sapply(logLiks, attr, "nobs")
   logLiksu <- unlist(logLiks)
@@ -110,7 +108,7 @@ anova.svcm <- function(object, ...) {
 
   chisq <- 2 * c(NA, diff(logLiksu))
   dfChisq <- c(NA, diff(dfs))
-  pval <- stats::pchisq(chisq, dfChisq, lower.tail = F)
+  pval <- stats::pchisq(chisq, dfChisq, lower.tail = FALSE)
 
   vals <- data.frame(Df = dfs,
                      AIC = sapply(fits, AIC),

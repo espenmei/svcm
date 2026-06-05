@@ -9,7 +9,7 @@ print.svc <- function(x, ...) {
   print(x$form)
 
   if(is.null(x$R)) {
-    invisible()
+    return(invisible(x))
   }
   dimR <- dim(x$R)
   cat("\nDimension of R:\n")
@@ -35,7 +35,7 @@ print.mc <- function(x, ...) {
   print(x$form)
 
   if(is.null(x$X)) {
-    invisible()
+    return(invisible(x))
   }
   dimX <- dim(x$X)
   cat("\nDimension of X:\n")

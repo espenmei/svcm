@@ -20,7 +20,7 @@
 #' @param env_comp computing environment where the expression is evaluated and stored.
 .update_pm <- function(pm, theta, env_comp) {
   pos_free_pm <- which(pm$free) # positions of free values in pm
-  ind_theta <- pmatch(pm$labels[pos_free_pm], names(theta), duplicates.ok = TRUE) # Positions of pos_free_pm in values
+  ind_theta <- match(pm$labels[pos_free_pm], names(theta)) # Positions of pos_free_pm in values
   pm$values[pos_free_pm] <- theta[ind_theta]
   assign(pm$name, pm$values, envir = env_comp) # update environment
 }
@@ -81,7 +81,14 @@
 #' @return Matrix with covariances for an object of type \code{svc}.
 .compute.fixedsvc <- function(object, env, ...) {
   vci <- eval(object$form, env)
-  sigma <- vci %x% object$R
+  if(is.null(object$tmpl)) {
+    return(vci %x% object$R) # not prepared: fall back to a full Kronecker product
+  }
+  # The sparsity pattern of vci %x% R is fixed (R is constant, vci is dense), so
+  # only the numeric values change between iterations. Refill them directly
+  # instead of rebuilding the sparse Kronecker product from scratch.
+  sigma <- object$tmpl
+  sigma@x <- as.numeric(vci)[object$vidx] * object$rval
   return(sigma)
 }
 
@@ -102,7 +109,7 @@
 #' @param mod an instance of an \code{svcm} model.
 #' @param drop_miss drop expectation for missing values?
 #' @return vector of means.
-expected_mean <- function(mod, drop_miss = T) {
+expected_mean <- function(mod, drop_miss = TRUE) {
   Mm <- Reduce("+", lapply(mod$mcs, .compute, mod$env_comp))
   M = as.vector(Mm) # vec(Mm) = vec(X %*% t(B))
   if(drop_miss) {
@@ -117,7 +124,7 @@ expected_mean <- function(mod, drop_miss = T) {
 #' @param svcm an instance of an \code{svcm} model.
 #' @param drop_miss drop expectation for missing values?
 #' @return matrix of (co)variances.
-expected_cov <- function(svcm, drop_miss = T) {
+expected_cov <- function(svcm, drop_miss = TRUE) {
   S <- Reduce("+", lapply(svcm$svcs, .compute, svcm$env_comp))
   if(drop_miss) {
     S <- S[svcm$dat$keepy, svcm$dat$keepy]
@@ -218,6 +225,30 @@ svc <- function(form, R = NULL) {
   .new_svc(form = form, class = "free")
 }
 
+# Precompute the fixed Kronecker pattern of a fixedsvc term so that
+# .compute.fixedsvc can refill only the numeric values during optimization.
+# Stores on the object:
+#   tmpl - a CsparseMatrix with the full (dense-block) pattern of vci %x% R,
+#   rval - the value of R at each stored nonzero,
+#   vidx - the column-major index into vec(vci) scaling each stored nonzero.
+.prepare_svc <- function(object, env) {
+  if(!inherits(object, "fixedsvc")) {
+    return(object)
+  }
+  vci <- eval(object$form, env)
+  p <- nrow(vci)
+  Rg <- as(as(object$R, "CsparseMatrix"), "generalMatrix")
+  ones <- matrix(1, p, p)
+  tmpl <- ones %x% Rg          # full block pattern; @x holds the R values
+  Vpos <- matrix(seq_len(p * p), p, p)
+  Rones <- Rg
+  Rones@x <- rep(1, length(Rg@x))
+  object$tmpl <- tmpl
+  object$rval <- tmpl@x
+  object$vidx <- as.integer((Vpos %x% Rones)@x)
+  return(object)
+}
+
 #' Constructor for mean component object
 #' @description Creates a mean component object used to define (part of) the mean structure in the model.
 #' @export
@@ -287,6 +318,9 @@ svcm <- function(Y, ...) {
                         H = NULL),
                    class = "svcm")
   update_model(ret, theta(ret))
+  # Precompute the fixed Kronecker patterns so each optimization step only
+  # refreshes the numeric values of the variance components.
+  ret$svcs <- lapply(ret$svcs, .prepare_svc, env = ret$env_comp)
   return(ret)
 }
 
@@ -352,15 +386,15 @@ fit_svcm <- function(mod, se = FALSE, ...) {
 
   # optimize model
   dots <- list(...)
-  ctrl <- exists("control", where = dots)
-  if(ctrl) {
-    ctrl <- get("control", dots)
+  th <- theta(mod)
+  if("control" %in% names(dots)) {
+    ctrl <- dots[["control"]]
     if(!is.null(ctrl$trace) && ctrl$trace > 0) {
-      cat("\niter: objective:", names(theta(mod)), "\n", sep = "\t")
+      cat("\niter: objective:", names(th), "\n", sep = "\t")
     }
   }
   time_start <- proc.time()
-  fit <- nlminb(theta(mod), fit_objective, mod = mod, ...)
+  fit <- nlminb(th, fit_objective, mod = mod, ...)
   fit$time <- proc.time() - time_start
   if(fit$convergence != 0) {
     warning("Optimization may not have converged.",
@@ -394,7 +428,7 @@ objective <- function(mod) {
   cS <- Matrix::Cholesky(S)
   r <- mod$dat$y - M
   iSr <- Matrix::solve(cS, r) # inv(S) %*% r
-  ld <- 2 * Matrix::determinant(cS)$modulus # 2 x logdet(L) = logdet(S)
+  ld <- Matrix::determinant(cS, sqrt = FALSE)$modulus # logdet(S)
   dev <- log(2 * pi) * length(r) + ld + sum(r * iSr)
   return(dev)
 }
@@ -406,17 +440,11 @@ objective <- function(mod) {
 #' @param ... Arguments passed to \code{numDeriv::hessian}.
 #' @return Hessian matrix.
 fd_hess_svcm <- function(mod, ...) {
-  # Her må du få sjekket om hessioan koøøde med modellen
-  # Da bør du heller ta en kopi. Også for jacobian KOmmer an på om de peker til samme env.
+  # Work on a clone so finite differencing does not mutate the caller's model.
+  mod <- .clone_model(mod)
   H <- numDeriv::hessian(fit_objective, mod$opt$par, mod = mod)
   pnms <- names(mod$opt$par)
   dimnames(H) <- list(pnms, pnms)
-  # Finite diff have now changed values in pms so need to be reset to par before return
-  update_model(mod, mod$opt$par)
-  # Dont think this is needed here as this should only be called on fitted models and these should already be updated solution
-  #for(i in seq_along(mod$pms)) {
-  #    mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
-  # }
   return(H)
 }
 
@@ -429,7 +457,8 @@ fd_hess_svcm <- function(mod, ...) {
 #' @param ... Arguments passed to \code{numDeriv::hessian}.
 #' @return Jacobian matrix.
 fd_jacobian_svcm <- function(mod, form, ...) {
-  mod_tmp <- mod
+  # Work on a clone so finite differencing does not mutate the caller's model.
+  mod_tmp <- .clone_model(mod)
   prs <- substitute(form)
   test_form <- eval(prs, mod_tmp$env_comp)
   if(!is.vector(test_form)) {
@@ -442,4 +471,13 @@ fd_jacobian_svcm <- function(mod, form, ...) {
   J <- numDeriv::jacobian(fu, theta(mod_tmp))
   colnames(J) <- names(theta(mod_tmp))
   return(J)
+}
+
+# Return a shallow copy of a model whose computing environment is an independent
+# copy. Functions that perturb the parameters (finite differencing) can then
+# mutate the clone freely without affecting the caller's model.
+.clone_model <- function(mod) {
+  mod$env_comp <- list2env(as.list.environment(mod$env_comp, all.names = TRUE),
+                           parent = parent.env(mod$env_comp))
+  return(mod)
 }
