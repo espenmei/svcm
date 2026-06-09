@@ -4,7 +4,7 @@
 \alias{expected_mean}
 \title{Model implied mean vector}
 \usage{
-expected_mean(mod, drop_miss = T)
+expected_mean(mod, drop_miss = TRUE)
 }
 \arguments{
 \item{mod}{an instance of an \code{svcm} model.}

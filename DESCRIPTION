@@ -10,10 +10,17 @@ Authors@R:
 Description: Fit variance component models with sparse relationship matrices.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Depends:
+    R (>= 4.1.0)
 LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 Imports: 
     Matrix,
 	numDeriv,
 	methods,
 	stats
+Suggests: 
+    testthat (>= 3.0.0),
+    lme4,
+    lavaan
+Config/testthat/edition: 3

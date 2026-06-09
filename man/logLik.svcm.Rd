@@ -2,15 +2,15 @@
 % Please edit documentation in R/svcm_utilities.R
 \name{logLik.svcm}
 \alias{logLik.svcm}
-\title{Computes log-likelihood for fitm objects.}
+\title{Computes log-likelihood for svcm objects.}
 \usage{
 \method{logLik}{svcm}(object, ...)
 }
 \arguments{
-\item{object}{An object of type fitm.}
+\item{object}{An object of type svcm.}
 
 \item{...}{Not used.}
 }
 \description{
-Computes log-likelihood for fitm objects.
+Computes log-likelihood for svcm objects.
 }

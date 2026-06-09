@@ -4,7 +4,7 @@
 \alias{expected_cov}
 \title{Model implied covariance matrix}
 \usage{
-expected_cov(svcm, drop_miss = T)
+expected_cov(svcm, drop_miss = TRUE)
 }
 \arguments{
 \item{svcm}{an instance of an \code{svcm} model.}

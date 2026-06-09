@@ -1,4 +1,9 @@
 
+#' @importFrom Matrix t
+#' @importFrom methods as
+#' @importFrom stats AIC BIC logLik nlminb vcov
+"_PACKAGE"
+
 #' Free values in parameter matrix
 #' @param pm an instance of an \code{pm} object.
 #' @return vector of values of free elements in parameter matrix (column wise)
@@ -51,7 +56,6 @@
 #' Generic compute function
 #' @description Internal functions used to evaluate expressions containing functions of model objects.
 #' @export
-#' @importFrom Matrix t
 #' @param object An object of type \code{mc} or \code{svc}.
 #' @param ... Further function arguments.
 .compute <- function(object, ...) {
@@ -61,7 +65,6 @@
 #' Compute function for mc object
 #' @description Internal function used to evaluate expressions containing objects of type \code{fixedmc}.
 #' @export
-#' @importFrom Matrix t
 #' @param object An object of type \code{mc}.
 #' @param env Computing environment.
 #' @param ... Not used.
@@ -183,6 +186,21 @@ ic <- function(form, name = character()) {
   return(ret)
 }
 
+#' Constructor for constant object
+#' @description Creates a constant object for use in model expressions. Constants
+#' are values (e.g. sparse matrices) that are referenced in \code{svc}, \code{mc},
+#' or \code{ic} expressions but are not model parameters.
+#' @export
+#' @param value The constant value.
+#' @param name Character giving name to reference the constant in model expressions.
+#' @return An object of class \code{const}.
+const <- function(value, name) {
+  if (missing(name) || !is.character(name) || length(name) != 1L) {
+    stop("A name is required.")
+  }
+  structure(list(value = value, name = name), class = "const")
+}
+
 #' Constructor for variance component object
 #' @description Creates a variance component object as a function of model objects and (optionally) a relationship matrix.
 #' @export
@@ -295,28 +313,93 @@ mc <- function(form, X = NULL) {
 #' @description Creates a new model
 #' @export
 #' @param Y Matrix of data described by model.
-#' @param ... All relevant model, mean and variance components objects used to define the model.
+#' @param ... All relevant model objects: \code{pm}, \code{svc}, \code{mc},
+#'   \code{ic}, and \code{const}.
 #' @return An object of type \code{svcm}.
+#' @examples
+#' \donttest{
+#' # Genetic factor model: y_j = b + l * eta_j + delta_j
+#' # eta_j = a_j + e_j,  Cov(a) = sigma_a^2 * A,  Cov(e) = sigma_e^2 * I
+#' # Cov(y) = (l l' sigma_a^2) x A  +  (l l' sigma_e^2 + TH) x I
+#'
+#' # Small genetic relationship matrix (two pedigree structures)
+#' str1 <- matrix(c(1, 1/4, 1/4, 1/4, 1, 1/2, 1/4, 1/2, 1), 3, 3)
+#' str2 <- matrix(c(1, 1/2, 1/8, 1/8, 1/2, 1, 1/8, 1/8,
+#'                  1/8, 1/8, 1, 1/2, 1/8, 1/8, 1/2, 1), 4, 4)
+#' A <- Matrix::bdiag(Matrix::bdiag(replicate(5, str1, simplify = FALSE)),
+#'                    Matrix::bdiag(replicate(5, str2, simplify = FALSE)))
+#' N <- nrow(A)
+#'
+#' # Simulate data
+#' set.seed(6)
+#' Lc  <- chol(A)
+#' a   <- sqrt(2) * t(Lc) %*% rnorm(N)
+#' e   <- rnorm(N, 0, sqrt(2))
+#' Y   <- rep(1, N) %*% t(c(2, 2, 4, 4)) +
+#'        (a + e) %*% t(c(1, 0.5, 0.5, 0.8)) +
+#'        matrix(rnorm(N * 4), N, 4)
+#'
+#' # Model 1: R= argument handles the Kronecker product implicitly
+#' m1 <- svcm(Y,
+#'   pm(4, 1, paste0("l", 1:4), c(FALSE, TRUE, TRUE, TRUE), c(1, .5, .5, .5), "l"),
+#'   pm(1, 1, "Sa1", TRUE, 1, "Sa"),
+#'   pm(1, 1, "Se1", TRUE, 1, "Se"),
+#'   pm(4, 4, sapply(1:4, \(i) paste0("th", 1:4, i)), diag(TRUE, 4), diag(4), "TH"),
+#'   pm(4, 1, paste0("b", 1:4), TRUE, 0, "b"),
+#'   svc(l %*% Sa %*% t(l), R = A),
+#'   svc(l %*% Se %*% t(l) + TH, R = Matrix::Diagonal(N)),
+#'   mc(b, X = rep(1, N))
+#' )
+#'
+#' # Model 2: equivalent, using const() to pass A and I as named constants
+#' # and writing the Kronecker products explicitly in the svc() expression
+#' m2 <- svcm(Y,
+#'   pm(4, 1, paste0("l", 1:4), c(FALSE, TRUE, TRUE, TRUE), c(1, .5, .5, .5), "l"),
+#'   pm(1, 1, "Sa1", TRUE, 1, "Sa"),
+#'   pm(1, 1, "Se1", TRUE, 1, "Se"),
+#'   pm(4, 4, sapply(1:4, \(i) paste0("th", 1:4, i)), diag(TRUE, 4), diag(4), "TH"),
+#'   pm(4, 1, paste0("b", 1:4), TRUE, 0, "b"),
+#'   const(A, "A"),
+#'   const(Matrix::Diagonal(N), "I"),
+#'   svc(kronecker(l %*% Sa %*% t(l), A) + kronecker(l %*% Se %*% t(l) + TH, I)),
+#'   mc(b, X = rep(1, N))
+#' )
+#'
+#' # Both specifications produce identical starting objectives
+#' stopifnot(isTRUE(all.equal(objective(m1), objective(m2))))
+#'
+#' m1 <- fit_svcm(m1)
+#' m2 <- fit_svcm(m2)
+#' stopifnot(isTRUE(all.equal(logLik(m1), logLik(m2))))
+#' }
 svcm <- function(Y, ...) {
-  # Extract only objects of type pm, svc, mc and ic and ignore anything else.
-  dots <- list(...)
-  pms <- dots[sapply(dots, inherits, "pm")]
-  svcs <-dots[sapply(dots, inherits, "svc")]
-  mcs <- dots[sapply(dots, inherits, "mc")]
-  ics <- dots[sapply(dots, inherits, "ic")]
+  dots   <- list(...)
+  pms    <- dots[sapply(dots, inherits, "pm")]
+  svcs   <- dots[sapply(dots, inherits, "svc")]
+  mcs    <- dots[sapply(dots, inherits, "mc")]
+  ics    <- dots[sapply(dots, inherits, "ic")]
+  consts <- dots[sapply(dots, inherits, "const")]
   if (length(pms) == 0 || length(svcs) == 0 || length(mcs) == 0) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
 
-  ret <- structure(list(dat = dat_svcm(Y),
-                        pms = pms, # is it really any point of storing other than pm?
-                        svcs = svcs,
-                        mcs = mcs,
-                        ics = ics,
-                        env_comp = new.env(), # Computing environment Should probably inherit prom parent environment to get relationship matrices for fixed types
-                        opt = NULL,
-                        H = NULL),
+  # Use the package namespace as the parent of the computing environment so
+  # that all imported functions (e.g. Matrix::t) are visible in expressions
+  # evaluated there, without requiring the user to attach Matrix explicitly.
+  # getNamespace() is used rather than environment() because environment()
+  # inside a function returns the execution frame, not the package namespace.
+  ret <- structure(list(dat    = dat_svcm(Y),
+                        pms    = pms,
+                        svcs   = svcs,
+                        mcs    = mcs,
+                        ics    = ics,
+                        consts = consts,
+                        env_comp = new.env(parent = getNamespace("svcm")),
+                        opt    = NULL,
+                        H      = NULL),
                    class = "svcm")
+  # Seed constants into the computing environment before any evaluation.
+  lapply(consts, \(c) assign(c$name, c$value, envir = ret$env_comp))
   update_model(ret, theta(ret))
   # Precompute the fixed Kronecker patterns so each optimization step only
   # refreshes the numeric values of the variance components.

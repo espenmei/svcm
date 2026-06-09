@@ -15,13 +15,18 @@ print.svc <- function(x, ...) {
   cat("\nDimension of R:\n")
   cat(dimR[1], "x", dimR[2], "\n")
   cat("\nDistinct elements in off-diagonal:")
-  if(methods::is(x$R, "ddiMatrix")) {
-    cat("\nR is diagonal")
+  if(methods::is(x$R, "diagonalMatrix")) {
+    cat("\nR is diagonal\n")
   } else {
     sumR <- Matrix::summary(x$R)
-    sumROff <- table(sumR[sumR$i < sumR$j, "x"])
-    print(sumROff)
+    off_vals <- sumR[sumR$i < sumR$j, "x"]
+    if(length(off_vals) == 0) {
+      cat("\nNo non-zero off-diagonal elements\n")
+    } else {
+      print(table(off_vals))
+    }
   }
+  invisible(x)
 }
 
 #' Print function for mc objects.
@@ -40,18 +45,20 @@ print.mc <- function(x, ...) {
   dimX <- dim(x$X)
   cat("\nDimension of X:\n")
   cat(dimX[1], "x", dimX[2], "\n")
+  invisible(x)
 }
 
-#' Print function for summary.fitm
-#' @description Print function for summary.fitm objects.
+#' Print function for summary.svcm
+#' @description Print function for summary.svcm objects.
 #' @export
-#' @param x An object of type summary.svc.
+#' @param x An object of type summary.svcm.
 #' @param ... Not used
 print.summary.svcm <- function(x, ...) {
   print(format(c("Log likelihood" = x$logl,
                  "Deviance" = x$dev,
                  "AIC" = x$AIC,
-                 "BIC" = x$BIC)), quote = F)
+                 "BIC" = x$BIC)), quote = FALSE)
   cat("\nFitted parameters:\n")
   stats::printCoefmat(x$est, digits = 3, signif.stars = FALSE, eps.Pvalue = 0.001)
+  invisible(x)
 }

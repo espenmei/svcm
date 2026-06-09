@@ -2,15 +2,15 @@
 % Please edit documentation in R/svcm_print.R
 \name{print.summary.svcm}
 \alias{print.summary.svcm}
-\title{Print function for summary.fitm}
+\title{Print function for summary.svcm}
 \usage{
 \method{print}{summary.svcm}(x, ...)
 }
 \arguments{
-\item{x}{An object of type summary.svc.}
+\item{x}{An object of type summary.svcm.}
 
 \item{...}{Not used}
 }
 \description{
-Print function for summary.fitm objects.
+Print function for summary.svcm objects.
 }
