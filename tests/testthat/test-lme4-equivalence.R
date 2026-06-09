@@ -40,31 +40,31 @@ mod_svcm <- svcm(
   svc(P + TH, R = R),
   mc(U, X = X)
 )
-fit_svcm <- fit_svcm(mod_svcm)
+fit_ri <- fit_svcm(mod_svcm)
 
 
 test_that("svcm and lme4 log-likelihoods agree", {
-  ll_svcm <- as.numeric(logLik(fit_svcm))
+  ll_svcm <- as.numeric(logLik(fit_ri))
   ll_lme4 <- as.numeric(logLik(fit_lme4))
   expect_equal(ll_svcm, ll_lme4, tolerance = 1e-4)
 })
 
 test_that("svcm and lme4 random intercept variance estimates agree", {
   # svcm: lp^2 = var_eta; lme4: VarCorr(fit)$subject[1]
-  var_eta_svcm <- theta(fit_svcm)[["lp"]]^2
+  var_eta_svcm <- theta(fit_ri)[["lp"]]^2
   var_eta_lme4 <- as.numeric(lme4::VarCorr(fit_lme4)$subject)
   expect_equal(var_eta_svcm, var_eta_lme4, tolerance = 1e-4)
 })
 
 test_that("svcm and lme4 residual variance estimates agree", {
   # svcm: lth^2 = var_eps; lme4: sigma^2
-  var_eps_svcm <- theta(fit_svcm)[["lth"]]^2
+  var_eps_svcm <- theta(fit_ri)[["lth"]]^2
   var_eps_lme4 <- sigma(fit_lme4)^2
   expect_equal(var_eps_svcm, var_eps_lme4, tolerance = 1e-4)
 })
 
 test_that("svcm and lme4 fixed intercept estimates agree", {
-  intercept_svcm <- theta(fit_svcm)[["u"]]
+  intercept_svcm <- theta(fit_ri)[["u"]]
   intercept_lme4 <- as.numeric(lme4::fixef(fit_lme4))
   expect_equal(intercept_svcm, intercept_lme4, tolerance = 1e-4)
 })

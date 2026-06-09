@@ -114,7 +114,7 @@
 #' @return vector of means.
 expected_mean <- function(mod, drop_miss = TRUE) {
   Mm <- Reduce("+", lapply(mod$mcs, .compute, mod$env_comp))
-  M = as.vector(Mm) # vec(Mm) = vec(X %*% t(B))
+  M  <- as.vector(Mm) # vec(Mm) = vec(X %*% t(B))
   if(drop_miss) {
     M <- M[mod$dat$keepy]
   }
@@ -413,10 +413,7 @@ svcm <- function(Y, ...) {
 #' @param Y response data described by model.
 #' @return an object of class \code{dat_svcm}.
 dat_svcm <- function(Y) {
-  if(!is.numeric(Y)) {
-    #stop("Y must be numeric.") # Doesnt work for Matrix types
-  }
-  # Stack Y - the order is always var1[1], var1[2], ..., var1[n], var2[1], var2[2], ..., var2[n]
+  # Stack Y column-major: var1[1], var1[2], ..., var1[n], var2[1], ...
   y <- c(Y)
   # Find positions of non-missing values
   keepy <- !is.na(y)
@@ -440,7 +437,7 @@ theta <- function(svcm) {
 #' Update parameter matrices in environment from theta
 #' @description update all free elements in parameter matrices.
 #' @export
-#' @param mod An object of type \code{fitm}.
+#' @param mod An object of type \code{svcm}.
 #' @param theta A vector of parameter values.
 update_model <- function(mod, theta) {
   .update_pms(mod, theta) # update parameter matrices
@@ -491,8 +488,8 @@ fit_svcm <- function(mod, se = FALSE, ...) {
     message("Computing standard errors.")
     mod$H <- fd_hess_svcm(mod)
   }
-  # This is necessary because they are not updated during optimisation and theta() uses these values.
-  ## They are the starting values for optimisation and may be used to continue optimization. No need to update during optim.
+  # pm$values are not updated during optimisation; sync them back from env_comp
+  # so that theta() returns the fitted values and the model can be re-fitted.
   for(i in seq_along(mod$pms)) {
     mod$pms[[i]]$values <- get(mod$pms[[i]]$name, envir = mod$env_comp)
   }
@@ -537,7 +534,7 @@ fd_hess_svcm <- function(mod, ...) {
 #' @export
 #' @param mod An object of type \code{svcm}
 #' @param form An expression for the calculation.
-#' @param ... Arguments passed to \code{numDeriv::hessian}.
+#' @param ... Arguments passed to \code{numDeriv::jacobian}.
 #' @return Jacobian matrix.
 fd_jacobian_svcm <- function(mod, form, ...) {
   # Work on a clone so finite differencing does not mutate the caller's model.

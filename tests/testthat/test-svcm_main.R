@@ -77,6 +77,18 @@ test_that("const() errors without a name", {
   expect_snapshot(error = TRUE, const(Matrix::Diagonal(5)))
 })
 
+test_that("const() is stored in mod$consts for post-fit inspection", {
+  d <- make_simple_model()
+  Z <- Matrix::Diagonal(ncol(d$Y))
+  mod <- svcm(d$Y, d$P, d$U,
+              const(Z, "Z"),
+              svc(Z %*% P %*% t(Z), R = d$R),
+              mc(U, X = d$X))
+  expect_length(mod$consts, 1)
+  expect_equal(mod$consts[[1]]$name,  "Z")
+  expect_equal(mod$consts[[1]]$value, Z)
+})
+
 test_that("const() is assigned into env_comp and visible in expressions", {
   d <- make_simple_model()
   I <- ncol(d$Y)

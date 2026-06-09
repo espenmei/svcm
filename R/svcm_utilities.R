@@ -55,7 +55,6 @@ summary.svcm <- function(object, ...) {
             class = "summary.svcm")
 }
 
-# Now also AIC and BIC should work.
 #' Computes log-likelihood for svcm objects.
 #' @description Computes log-likelihood for svcm objects.
 #' @export

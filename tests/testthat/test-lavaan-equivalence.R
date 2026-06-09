@@ -30,7 +30,7 @@ pe      <- lavaan::parameterEstimates(fit_lav)  # estimates and SEs
 
 # svcm: equivalent model using direct parameterisation
 # (avoids Cholesky so SE units match lavaan directly)
-fit_svcm <- svcm(
+fit_cfa <- svcm(
   Y_fac,
   pm(I, 1, paste0("l",  1:I), c(FALSE, TRUE, TRUE, TRUE), 1, "L"),
   pm(1, 1, "p",               TRUE,                      1, "P"),
@@ -40,8 +40,8 @@ fit_svcm <- svcm(
   mc(U, X = matrix(1, J, 1))
 ) |> fit_svcm(se = TRUE)
 
-th_svcm <- theta(fit_svcm)
-se_svcm <- sqrt(diag(vcov(fit_svcm)))
+th_cfa <- theta(fit_cfa)
+se_cfa <- sqrt(diag(vcov(fit_cfa)))
 
 # Helpers for pulling lavaan estimates / SEs by parameter type
 lav_est <- function(op, lhs, rhs) pe$est[pe$op == op & pe$lhs == lhs & pe$rhs == rhs]
@@ -52,7 +52,7 @@ lav_se  <- function(op, lhs, rhs) pe$se[ pe$op == op & pe$lhs == lhs & pe$rhs ==
 
 test_that("svcm and lavaan log-likelihoods agree for factor model", {
   expect_equal(
-    as.numeric(logLik(fit_svcm)),
+    as.numeric(logLik(fit_cfa)),
     as.numeric(lavaan::logLik(fit_lav)),
     tolerance = 1e-3
   )
@@ -62,25 +62,25 @@ test_that("svcm and lavaan factor loading estimates and SEs agree", {
   for (i in 2:I) {
     lname <- paste0("l", i)
     yname <- paste0("y", i)
-    expect_equal(th_svcm[[lname]], lav_est("=~", "eta", yname), tolerance = 1e-4,
+    expect_equal(th_cfa[[lname]], lav_est("=~", "eta", yname), tolerance = 1e-4,
                  label = paste(lname, "estimate"))
-    expect_equal(se_svcm[[lname]], lav_se("=~", "eta", yname),  tolerance = 0.03,
+    expect_equal(se_cfa[[lname]], lav_se("=~", "eta", yname),  tolerance = 0.03,
                  label = paste(lname, "SE"))
   }
 })
 
 test_that("svcm and lavaan factor variance estimate and SE agree", {
-  expect_equal(th_svcm[["p"]], lav_est("~~", "eta", "eta"), tolerance = 1e-4)
-  expect_equal(se_svcm[["p"]], lav_se( "~~", "eta", "eta"), tolerance = 0.03)
+  expect_equal(th_cfa[["p"]], lav_est("~~", "eta", "eta"), tolerance = 1e-4)
+  expect_equal(se_cfa[["p"]], lav_se( "~~", "eta", "eta"), tolerance = 0.03)
 })
 
 test_that("svcm and lavaan residual variance estimates and SEs agree", {
   for (i in 1:I) {
     tname <- paste0("th", i)
     yname <- paste0("y", i)
-    expect_equal(th_svcm[[tname]], lav_est("~~", yname, yname), tolerance = 1e-4,
+    expect_equal(th_cfa[[tname]], lav_est("~~", yname, yname), tolerance = 1e-4,
                  label = paste(tname, "estimate"))
-    expect_equal(se_svcm[[tname]], lav_se( "~~", yname, yname), tolerance = 0.03,
+    expect_equal(se_cfa[[tname]], lav_se( "~~", yname, yname), tolerance = 0.03,
                  label = paste(tname, "SE"))
   }
 })
@@ -90,9 +90,9 @@ test_that("svcm and lavaan intercept estimates and SEs agree", {
     uname <- paste0("u", i)
     yname <- paste0("y", i)
     # lavaan stores intercepts with rhs == "" (not the variable name)
-    expect_equal(th_svcm[[uname]], lav_est("~1", yname, ""), tolerance = 1e-4,
+    expect_equal(th_cfa[[uname]], lav_est("~1", yname, ""), tolerance = 1e-4,
                  label = paste(uname, "estimate"))
-    expect_equal(se_svcm[[uname]], lav_se( "~1", yname, ""), tolerance = 0.03,
+    expect_equal(se_cfa[[uname]], lav_se( "~1", yname, ""), tolerance = 0.03,
                  label = paste(uname, "SE"))
   }
 })
@@ -116,7 +116,7 @@ fit_lav_miss <- lavaan::cfa(lav_mod, as.data.frame(Y_miss),
                             meanstructure = TRUE, missing = "ML")
 pe_miss      <- lavaan::parameterEstimates(fit_lav_miss)
 
-fit_svcm_miss <- svcm(
+fit_cfa_miss <- svcm(
   Y_miss,
   pm(I, 1, paste0("l",  1:I), c(FALSE, TRUE, TRUE, TRUE), 1, "L"),
   pm(1, 1, "p",               TRUE,                      1, "P"),
@@ -126,8 +126,8 @@ fit_svcm_miss <- svcm(
   mc(U, X = matrix(1, J, 1))
 ) |> fit_svcm(se = TRUE)
 
-th_svcm_miss <- theta(fit_svcm_miss)
-se_svcm_miss <- sqrt(diag(vcov(fit_svcm_miss)))
+th_cfa_miss <- theta(fit_cfa_miss)
+se_cfa_miss <- sqrt(diag(vcov(fit_cfa_miss)))
 
 lav_est_m <- function(op, lhs, rhs) pe_miss$est[pe_miss$op == op & pe_miss$lhs == lhs & pe_miss$rhs == rhs]
 lav_se_m  <- function(op, lhs, rhs) pe_miss$se[ pe_miss$op == op & pe_miss$lhs == lhs & pe_miss$rhs == rhs]
@@ -135,7 +135,7 @@ lav_se_m  <- function(op, lhs, rhs) pe_miss$se[ pe_miss$op == op & pe_miss$lhs =
 
 test_that("svcm and lavaan log-likelihoods agree with missing data", {
   expect_equal(
-    as.numeric(logLik(fit_svcm_miss)),
+    as.numeric(logLik(fit_cfa_miss)),
     as.numeric(lavaan::logLik(fit_lav_miss)),
     tolerance = 1e-3
   )
@@ -145,25 +145,25 @@ test_that("svcm and lavaan factor loading estimates and SEs agree with missing d
   for (i in 2:I) {
     lname <- paste0("l", i)
     yname <- paste0("y", i)
-    expect_equal(th_svcm_miss[[lname]], lav_est_m("=~", "eta", yname), tolerance = 1e-4,
+    expect_equal(th_cfa_miss[[lname]], lav_est_m("=~", "eta", yname), tolerance = 1e-4,
                  label = paste(lname, "estimate"))
-    expect_equal(se_svcm_miss[[lname]], lav_se_m( "=~", "eta", yname), tolerance = 1e-4,
+    expect_equal(se_cfa_miss[[lname]], lav_se_m( "=~", "eta", yname), tolerance = 1e-4,
                  label = paste(lname, "SE"))
   }
 })
 
 test_that("svcm and lavaan factor variance estimate and SE agree with missing data", {
-  expect_equal(th_svcm_miss[["p"]], lav_est_m("~~", "eta", "eta"), tolerance = 1e-4)
-  expect_equal(se_svcm_miss[["p"]], lav_se_m( "~~", "eta", "eta"), tolerance = 1e-4)
+  expect_equal(th_cfa_miss[["p"]], lav_est_m("~~", "eta", "eta"), tolerance = 1e-4)
+  expect_equal(se_cfa_miss[["p"]], lav_se_m( "~~", "eta", "eta"), tolerance = 1e-4)
 })
 
 test_that("svcm and lavaan residual variance estimates and SEs agree with missing data", {
   for (i in 1:I) {
     tname <- paste0("th", i)
     yname <- paste0("y", i)
-    expect_equal(th_svcm_miss[[tname]], lav_est_m("~~", yname, yname), tolerance = 1e-4,
+    expect_equal(th_cfa_miss[[tname]], lav_est_m("~~", yname, yname), tolerance = 1e-4,
                  label = paste(tname, "estimate"))
-    expect_equal(se_svcm_miss[[tname]], lav_se_m( "~~", yname, yname), tolerance = 1e-4,
+    expect_equal(se_cfa_miss[[tname]], lav_se_m( "~~", yname, yname), tolerance = 1e-4,
                  label = paste(tname, "SE"))
   }
 })
@@ -172,9 +172,9 @@ test_that("svcm and lavaan intercept estimates and SEs agree with missing data",
   for (i in 1:I) {
     uname <- paste0("u", i)
     yname <- paste0("y", i)
-    expect_equal(th_svcm_miss[[uname]], lav_est_m("~1", yname, ""), tolerance = 1e-4,
+    expect_equal(th_cfa_miss[[uname]], lav_est_m("~1", yname, ""), tolerance = 1e-4,
                  label = paste(uname, "estimate"))
-    expect_equal(se_svcm_miss[[uname]], lav_se_m( "~1", yname, ""), tolerance = 1e-4,
+    expect_equal(se_cfa_miss[[uname]], lav_se_m( "~1", yname, ""), tolerance = 1e-4,
                  label = paste(uname, "SE"))
   }
 })
