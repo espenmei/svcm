@@ -7,7 +7,7 @@
 update_model(mod, theta)
 }
 \arguments{
-\item{mod}{An object of type \code{fitm}.}
+\item{mod}{An object of type \code{svcm}.}
 
 \item{theta}{A vector of parameter values.}
 }

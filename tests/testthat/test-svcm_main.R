@@ -82,7 +82,7 @@ test_that("const() is stored in mod$consts for post-fit inspection", {
   Z <- Matrix::Diagonal(ncol(d$Y))
   mod <- svcm(d$Y, d$P, d$U,
               const(Z, "Z"),
-              svc(Z %*% P %*% t(Z), R = d$R),
+              svc(Z %*% P %*% Matrix::t(Z), R = d$R),
               mc(U, X = d$X))
   expect_length(mod$consts, 1)
   expect_equal(mod$consts[[1]]$name,  "Z")
@@ -95,24 +95,43 @@ test_that("const() is assigned into env_comp and visible in expressions", {
   Z <- Matrix::Diagonal(I)
   mod <- svcm(d$Y, d$P, d$U,
               const(Z, "Z"),
-              svc(Z %*% P %*% t(Z), R = d$R),
+              svc(Z %*% P %*% Matrix::t(Z), R = d$R),
               mc(U, X = d$X))
   expect_true(exists("Z", envir = mod$env_comp, inherits = FALSE))
   expect_equal(get("Z", envir = mod$env_comp), Z)
 })
 
-test_that("t() resolves to Matrix::t in model expressions", {
-  # Verifies that env_comp's parent is the svcm namespace (not the calling
-  # frame), so imported functions like Matrix::t are found automatically.
+test_that("Matrix::t() works in strict model expressions", {
   d <- make_simple_model()
   I <- ncol(d$Y)
   LP <- pm(I, 1, rep("lp", I), TRUE, 1, "LP")
   expect_no_error(
     svcm(d$Y, LP, d$U,
-         ic(LP %*% t(LP), name = "P"),
+         ic(LP %*% Matrix::t(LP), name = "P"),
          svc(P, R = d$R),
          mc(U, X = d$X))
   )
+})
+
+test_that("objective() does not resolve symbols from the calling environment", {
+  d <- make_simple_model()
+  A <- d$R
+  mod <- svcm(d$Y, d$P, d$U,
+              svc(P %x% A),
+              mc(U, X = d$X))
+
+  expect_error(objective(mod), "object 'A' not found")
+})
+
+test_that("objective() resolves externally supplied symbols only via const()", {
+  d <- make_simple_model()
+  A <- d$R
+  mod <- svcm(d$Y, d$P, d$U,
+              const(A, "A"),
+              svc(P %x% A),
+              mc(U, X = d$X))
+
+  expect_no_error(objective(mod))
 })
 
 

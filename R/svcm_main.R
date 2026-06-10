@@ -315,6 +315,9 @@ mc <- function(form, X = NULL) {
 #' @param Y Matrix of data described by model.
 #' @param ... All relevant model objects: \code{pm}, \code{svc}, \code{mc},
 #'   \code{ic}, and \code{const}.
+#'   Model expressions are evaluated in a strict environment: external objects
+#'   must be supplied via \code{const()}, and non-base functions should be
+#'   called with explicit namespaces (for example \code{Matrix::t()}).
 #' @return An object of type \code{svcm}.
 #' @examples
 #' \donttest{
@@ -346,8 +349,8 @@ mc <- function(form, X = NULL) {
 #'   pm(1, 1, "Se1", TRUE, 1, "Se"),
 #'   pm(4, 4, sapply(1:4, \(i) paste0("th", 1:4, i)), diag(TRUE, 4), diag(4), "TH"),
 #'   pm(4, 1, paste0("b", 1:4), TRUE, 0, "b"),
-#'   svc(l %*% Sa %*% t(l), R = A),
-#'   svc(l %*% Se %*% t(l) + TH, R = Matrix::Diagonal(N)),
+#'   svc(l %*% Sa %*% Matrix::t(l), R = A),
+#'   svc(l %*% Se %*% Matrix::t(l) + TH, R = Matrix::Diagonal(N)),
 #'   mc(b, X = rep(1, N))
 #' )
 #'
@@ -361,7 +364,8 @@ mc <- function(form, X = NULL) {
 #'   pm(4, 1, paste0("b", 1:4), TRUE, 0, "b"),
 #'   const(A, "A"),
 #'   const(Matrix::Diagonal(N), "I"),
-#'   svc(kronecker(l %*% Sa %*% t(l), A) + kronecker(l %*% Se %*% t(l) + TH, I)),
+#'   svc(kronecker(l %*% Sa %*% Matrix::t(l), A) +
+#'       kronecker(l %*% Se %*% Matrix::t(l) + TH, I)),
 #'   mc(b, X = rep(1, N))
 #' )
 #'
@@ -383,18 +387,17 @@ svcm <- function(Y, ...) {
     stop("At least one pm, svc and mc object must be supplied.")
   }
 
-  # Use the package namespace as the parent of the computing environment so
-  # that all imported functions (e.g. Matrix::t) are visible in expressions
-  # evaluated there, without requiring the user to attach Matrix explicitly.
-  # getNamespace() is used rather than environment() because environment()
-  # inside a function returns the execution frame, not the package namespace.
+  # Keep model evaluation isolated from the caller/global environment.
+  # Model objects and constants are explicitly assigned into env_comp.
+  # If users need non-base methods (e.g. Matrix transpose), expressions should
+  # call them with explicit namespaces (e.g. Matrix::t()).
   ret <- structure(list(dat    = dat_svcm(Y),
                         pms    = pms,
                         svcs   = svcs,
                         mcs    = mcs,
                         ics    = ics,
                         consts = consts,
-                        env_comp = new.env(parent = getNamespace("svcm")),
+                        env_comp = new.env(parent = baseenv()),
                         opt    = NULL,
                         H      = NULL),
                    class = "svcm")

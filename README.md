@@ -92,6 +92,10 @@ argument is an expression involving parameters and the second argument
 `pm`, `svc` and `mc` objects that can be supplied, they will be added
 together to form the total mean and covariance structure.
 
+Model expressions are evaluated in a strict environment. External
+objects should be passed via `const()`, and non-base functions should be
+called with explicit namespaces (for example `Matrix::t()`).
+
 ``` r
 library(svcm)
 # Environmental relationship matrix
@@ -106,8 +110,8 @@ m1 <- svcm(
   pm(nrow = 4, ncol = 4, labels = sapply(1:4, function(x) paste0("th", 1:4, x)), free = diag(T, 4), values = diag(4), name = "TH"),
   pm(nrow = 4, ncol = 1, labels = paste0("b", 1:4), free = T, values = 0, name = "b"),
   # Variance components
-  svc(l %*% Sa %*% t(l), R = A),
-  svc(l %*% Se %*% t(l) + TH, R = I),
+  svc(l %*% Sa %*% Matrix::t(l), R = A),
+  svc(l %*% Se %*% Matrix::t(l) + TH, R = I),
   # Mean components
   mc(b, X = x)
 )

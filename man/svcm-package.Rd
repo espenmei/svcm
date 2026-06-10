@@ -10,4 +10,9 @@ Fit variance component models with sparse relationship matrices.
 \author{
 \strong{Maintainer}: Espen Moen Eilertsen \email{e.m.eilertsen@psykologi.uio.no} (\href{https://orcid.org/0000-0003-3444-4251}{ORCID})
 
+Authors:
+\itemize{
+  \item Espen Moen Eilertsen \email{e.m.eilertsen@psykologi.uio.no} (\href{https://orcid.org/0000-0003-3444-4251}{ORCID})
+}
+
 }

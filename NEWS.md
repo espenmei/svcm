@@ -33,6 +33,3 @@
   constructors, numerical parameter recovery, equivalence with lme4 and
   lavaan (complete and missing data), and delta-method SE equivalence
   between direct and Cholesky parameterisations.
-
-* Removed the informal `Test/` directory, which is now fully superseded by
-  the test suite.

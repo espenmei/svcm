@@ -10,7 +10,10 @@ svcm(Y, ...)
 \item{Y}{Matrix of data described by model.}
 
 \item{...}{All relevant model objects: \code{pm}, \code{svc}, \code{mc},
-\code{ic}, and \code{const}.}
+\code{ic}, and \code{const}.
+Model expressions are evaluated in a strict environment: external objects
+must be supplied via \code{const()}, and non-base functions should be
+called with explicit namespaces (for example \code{Matrix::t()}).}
 }
 \value{
 An object of type \code{svcm}.
@@ -48,8 +51,8 @@ m1 <- svcm(Y,
   pm(1, 1, "Se1", TRUE, 1, "Se"),
   pm(4, 4, sapply(1:4, \(i) paste0("th", 1:4, i)), diag(TRUE, 4), diag(4), "TH"),
   pm(4, 1, paste0("b", 1:4), TRUE, 0, "b"),
-  svc(l \%*\% Sa \%*\% t(l), R = A),
-  svc(l \%*\% Se \%*\% t(l) + TH, R = Matrix::Diagonal(N)),
+  svc(l \%*\% Sa \%*\% Matrix::t(l), R = A),
+  svc(l \%*\% Se \%*\% Matrix::t(l) + TH, R = Matrix::Diagonal(N)),
   mc(b, X = rep(1, N))
 )
 
@@ -63,7 +66,8 @@ m2 <- svcm(Y,
   pm(4, 1, paste0("b", 1:4), TRUE, 0, "b"),
   const(A, "A"),
   const(Matrix::Diagonal(N), "I"),
-  svc(kronecker(l \%*\% Sa \%*\% t(l), A) + kronecker(l \%*\% Se \%*\% t(l) + TH, I)),
+  svc(kronecker(l \%*\% Sa \%*\% Matrix::t(l), A) +
+      kronecker(l \%*\% Se \%*\% Matrix::t(l) + TH, I)),
   mc(b, X = rep(1, N))
 )
 

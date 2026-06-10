@@ -11,7 +11,7 @@ fd_jacobian_svcm(mod, form, ...)
 
 \item{form}{An expression for the calculation.}
 
-\item{...}{Arguments passed to \code{numDeriv::hessian}.}
+\item{...}{Arguments passed to \code{numDeriv::jacobian}.}
 }
 \value{
 Jacobian matrix.

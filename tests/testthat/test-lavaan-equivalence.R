@@ -36,7 +36,7 @@ fit_cfa <- svcm(
   pm(1, 1, "p",               TRUE,                      1, "P"),
   pm(I, I, paste0("th", 1:I), diag(TRUE, I), diag(1, I),   "TH"),
   pm(I, 1, paste0("u",  1:I), TRUE,          0,             "U"),
-  svc(L %*% P %*% t(L) + TH, R = Matrix::Diagonal(J)),
+  svc(L %*% P %*% Matrix::t(L) + TH, R = Matrix::Diagonal(J)),
   mc(U, X = matrix(1, J, 1))
 ) |> fit_svcm(se = TRUE)
 
@@ -122,7 +122,7 @@ fit_cfa_miss <- svcm(
   pm(1, 1, "p",               TRUE,                      1, "P"),
   pm(I, I, paste0("th", 1:I), diag(TRUE, I), diag(1, I),   "TH"),
   pm(I, 1, paste0("u",  1:I), TRUE,          0,             "U"),
-  svc(L %*% P %*% t(L) + TH, R = Matrix::Diagonal(J)),
+  svc(L %*% P %*% Matrix::t(L) + TH, R = Matrix::Diagonal(J)),
   mc(U, X = matrix(1, J, 1))
 ) |> fit_svcm(se = TRUE)
 

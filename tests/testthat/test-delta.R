@@ -34,7 +34,7 @@ fit_dir <- svcm(
   pm(1, 1, "p",               TRUE,                       1,         "P"),
   pm(I, I, paste0("th", 1:I), diag(TRUE, I), diag(1, I),              "TH"),
   pm(I, 1, paste0("u",  1:I), TRUE,          0,                       "U"),
-  svc(L %*% P %*% t(L) + TH, R = R),
+  svc(L %*% P %*% Matrix::t(L) + TH, R = R),
   mc(U, X = X)
 ) |> fit_svcm(se = TRUE)
 
@@ -49,7 +49,7 @@ fit_chol <- svcm(
   pm(I, 1, paste0("u",  1:I), TRUE,           0,                      "U"),
   ic(tcrossprod(LP),  name = "P"),
   ic(tcrossprod(LTH), name = "TH"),
-  svc(L %*% P %*% t(L) + TH, R = R),
+  svc(L %*% P %*% Matrix::t(L) + TH, R = R),
   mc(U, X = X)
 ) |> fit_svcm(se = TRUE)
 
@@ -93,7 +93,7 @@ test_that("Cholesky estimates recover direct estimates after squaring", {
 
 test_that("delta-method SE for factor variance matches direct SE", {
   # J: d(lp^2) / d(theta) -- scalar expression, so J is 1 x n_params
-  J_p <- fd_jacobian_svcm(fit_chol, as.vector(LP %*% t(LP)))
+  J_p <- fd_jacobian_svcm(fit_chol, as.vector(LP %*% Matrix::t(LP)))
   se_p_delta  <- sqrt(as.numeric(J_p %*% C %*% t(J_p)))
   se_p_direct <- sqrt(diag(vcov(fit_dir)))[["p"]]
 
@@ -102,7 +102,7 @@ test_that("delta-method SE for factor variance matches direct SE", {
 
 test_that("delta-method SEs for residual variances match direct SEs", {
   # J: d(diag(LTH %*% t(LTH))) / d(theta) -- 4-element expression, so J is 4 x n_params
-  J_th <- fd_jacobian_svcm(fit_chol, diag(as.matrix(LTH %*% t(LTH))))
+  J_th <- fd_jacobian_svcm(fit_chol, diag(as.matrix(LTH %*% Matrix::t(LTH))))
   se_th_delta  <- sqrt(diag(J_th %*% C %*% t(J_th)))
   se_th_direct <- sqrt(diag(vcov(fit_dir)))[paste0("th", 1:I)]
 
