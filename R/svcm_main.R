@@ -128,7 +128,21 @@ expected_mean <- function(mod, drop_miss = TRUE) {
 #' @param drop_miss drop expectation for missing values?
 #' @return matrix of (co)variances.
 expected_cov <- function(svcm, drop_miss = TRUE) {
-  S <- Reduce("+", lapply(svcm$svcs, .compute, svcm$env_comp))
+  if(!is.null(svcm$Vtmpl)) {
+    # The sparsity pattern of V = sum of variance components is fixed (see
+    # .prepare_V), so accumulate the numeric values of each term directly
+    # into the precomputed template instead of repeated sparse addition.
+    S <- svcm$Vtmpl
+    x <- numeric(length(S@x))
+    for(i in seq_along(svcm$svcs)) {
+      sigma <- .compute(svcm$svcs[[i]], svcm$env_comp)
+      idx <- svcm$vc_idx[[i]]
+      x[idx] <- x[idx] + sigma@x
+    }
+    S@x <- x
+  } else {
+    S <- Reduce("+", lapply(svcm$svcs, .compute, svcm$env_comp))
+  }
   if(drop_miss) {
     S <- S[svcm$dat$keepy, svcm$dat$keepy]
   }
@@ -265,6 +279,42 @@ svc <- function(form, R = NULL) {
   object$rval <- tmpl@x
   object$vidx <- as.integer((Vpos %x% Rones)@x)
   return(object)
+}
+
+# Precompute the fixed union pattern of the marginal covariance matrix
+# V = sum_i V_i so that expected_cov can accumulate the numeric values of the
+# terms directly instead of rebuilding V with repeated sparse addition.
+# Only applies when every svc term is a prepared fixedsvc, since then each
+# term's sparsity pattern (and hence their union) is invariant during
+# optimization. Stores on the model:
+#   Vtmpl  - a dgCMatrix with the union pattern of all terms,
+#   vc_idx - per term, the index into Vtmpl@x for each of the term's nonzeros.
+.prepare_V <- function(mod) {
+  prepared <- vapply(mod$svcs, function(s) {
+    inherits(s, "fixedsvc") && !is.null(s$tmpl)
+  }, logical(1))
+  if(!all(prepared)) {
+    return(mod)
+  }
+  # Union pattern: sum the terms' patterns with all-ones values so that
+  # numeric cancellation cannot drop structural nonzeros.
+  ones <- lapply(mod$svcs, function(s) {
+    tmpl <- s$tmpl
+    tmpl@x <- rep(1, length(tmpl@x))
+    tmpl
+  })
+  Vtmpl <- Reduce("+", ones)
+  Vtmpl <- as(Vtmpl, "generalMatrix")
+  # Position matrix: entry (i, j) of Vpos holds the index into Vtmpl@x.
+  Vpos <- Vtmpl
+  Vpos@x <- as.double(seq_along(Vtmpl@x))
+  # Each term's pattern is a subset of the union, so the elementwise product
+  # Vpos * pattern_i has exactly the term's pattern, and its values are the
+  # positions of the term's nonzeros within Vtmpl@x (in matching order).
+  mod$vc_idx <- lapply(ones, function(o) as.integer((Vpos * o)@x))
+  Vtmpl@x <- numeric(length(Vtmpl@x))
+  mod$Vtmpl <- Vtmpl
+  return(mod)
 }
 
 #' Constructor for mean component object
@@ -407,6 +457,9 @@ svcm <- function(Y, ...) {
   # Precompute the fixed Kronecker patterns so each optimization step only
   # refreshes the numeric values of the variance components.
   ret$svcs <- lapply(ret$svcs, .prepare_svc, env = ret$env_comp)
+  # Precompute the fixed union pattern of V = sum of variance components so
+  # expected_cov only refills numeric values (requires all svcs prepared).
+  ret <- .prepare_V(ret)
   return(ret)
 }
 

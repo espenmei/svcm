@@ -1,6 +1,6 @@
 Package: svcm
 Title: Structured Variance Component Models
-Version: 0.5.0
+Version: 0.6.0
 Authors@R: 
     person(given = "Espen Moen",
            family = "Eilertsen",

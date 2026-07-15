@@ -1,3 +1,18 @@
+# svcm 0.6.0
+
+## New features
+
+* Added precomputed sparsity templates for the marginal covariance matrix
+  `V = sum_i V_i` when all variance components are fixed `svc(..., R=)` terms.
+  This avoids repeated sparse pattern unions in `expected_cov()` by refilling
+  only numeric values each iteration.
+
+## Testing
+
+* Added `test-vtemplate.R` with correctness and regression checks for the
+  `V` template path, including equality to the naive summation path during
+  covariance evaluation and model fitting.
+
 # svcm 0.5.0
 
 ## New features
