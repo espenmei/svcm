@@ -317,6 +317,32 @@ svc <- function(form, R = NULL) {
   return(mod)
 }
 
+# Precompute the symbolic Cholesky factorization of the marginal covariance.
+# The nonzero pattern of the (missing-data reduced) covariance is fixed whenever
+# .prepare_V succeeded, so each objective evaluation can reuse this symbolic
+# analysis (fill-reducing permutation and elimination structure) and only redo
+# the numeric factorization via Matrix::update(). Stores mod$Lsym.
+.prepare_chol <- function(mod) {
+  if(is.null(mod$Vtmpl)) {
+    return(mod)
+  }
+  # Build the symbolic factorization from a positive-definite surrogate that
+  # shares the covariance's (missing-data reduced) sparsity pattern. The
+  # symbolic analysis (fill-reducing permutation and elimination structure)
+  # depends only on the pattern, so using a value-independent surrogate avoids
+  # factorizing a possibly non-positive-definite matrix at the starting values.
+  S <- expected_cov(mod)
+  G <- as(Matrix::forceSymmetric(S), "generalMatrix")
+  G@x <- rep(1, length(G@x))
+  n <- nrow(G)
+  G <- Matrix::forceSymmetric(G + Matrix::Diagonal(n, n + 1))
+  mod$Lsym <- tryCatch(
+    Matrix::Cholesky(G, LDL = FALSE),
+    error = function(e) NULL
+  )
+  return(mod)
+}
+
 #' Constructor for mean component object
 #' @description Creates a mean component object used to define (part of) the mean structure in the model.
 #' @export
@@ -460,6 +486,9 @@ svcm <- function(Y, ...) {
   # Precompute the fixed union pattern of V = sum of variance components so
   # expected_cov only refills numeric values (requires all svcs prepared).
   ret <- .prepare_V(ret)
+  # Precompute the symbolic Cholesky factorization so each objective evaluation
+  # reuses the symbolic analysis and only redoes the numeric factorization.
+  ret <- .prepare_chol(ret)
   return(ret)
 }
 
@@ -561,8 +590,15 @@ objective <- function(mod) {
   M <- expected_mean(mod)
   S <- expected_cov(mod)
 
-  cS <- Matrix::Cholesky(S)
   r <- mod$dat$y - M
+  # Reuse the precomputed symbolic factorization when the covariance pattern
+  # is fixed, redoing only the numeric factorization. Fall back to a full
+  # factorization otherwise.
+  if(!is.null(mod$Lsym)) {
+    cS <- Matrix::update(mod$Lsym, Matrix::forceSymmetric(S), mult = 0)
+  } else {
+    cS <- Matrix::Cholesky(S)
+  }
   iSr <- Matrix::solve(cS, r) # inv(S) %*% r
   ld <- Matrix::determinant(cS, sqrt = FALSE)$modulus # logdet(S)
   dev <- log(2 * pi) * length(r) + ld + sum(r * iSr)

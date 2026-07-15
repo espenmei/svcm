@@ -7,11 +7,17 @@
   This avoids repeated sparse pattern unions in `expected_cov()` by refilling
   only numeric values each iteration.
 
+* Reuse of the symbolic Cholesky factorization in `objective()`. Because the
+  covariance sparsity pattern is fixed, the fill-reducing permutation and
+  elimination structure are computed once in `svcm()` and each objective
+  evaluation only redoes the numeric factorization via `Matrix::update()`.
+
 ## Testing
 
 * Added `test-vtemplate.R` with correctness and regression checks for the
-  `V` template path, including equality to the naive summation path during
-  covariance evaluation and model fitting.
+  `V` template and symbolic-Cholesky-reuse paths, including equality to the
+  naive summation / full-factorization paths during covariance evaluation and
+  model fitting, and guards that neither optimization slows objective().
 
 # svcm 0.5.0
 
