@@ -19,6 +19,16 @@
   naive summation / full-factorization paths during covariance evaluation and
   model fitting, and guards that neither optimization slows objective().
 
+## Documentation
+
+* Documented the two complementary `svc()` forms: the separable
+  `svc(Sigma, R = R)` form declaring a Kronecker term
+  (fast, fixed sparsity pattern) and the general `svc(expr)` form for flexible
+  covariance structures such as `Z (G %x% A) Z' + E %x% I`. Clarified in the
+  `svc()` help, the README, and code comments why the marginal-covariance and
+  symbolic-Cholesky precomputations apply only when every term is separable,
+  and that mixed models fall back to correct-but-general summation.
+
 # svcm 0.5.0
 
 ## New features

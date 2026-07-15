@@ -7,15 +7,53 @@
 svc(form, R = NULL)
 }
 \arguments{
-\item{form}{An expression for the covariance model.}
+\item{form}{An expression for the covariance model. With \code{R} supplied,
+\code{form} evaluates to the across-variable covariance \eqn{\Sigma} of the
+separable term \eqn{\Sigma \otimes R}. With \code{R} omitted, \code{form} is
+the full covariance expression for the term.}
 
-\item{R}{A relationship matrix. Should be a sparse matrix from the \code{Matrix} package.}
+\item{R}{Optional relationship matrix. When supplied, the term is the
+separable structure \eqn{\Sigma \otimes R} and \code{R} must be a symmetric
+sparse matrix from the \code{Matrix} package. When \code{NULL} (default),
+\code{form} is treated as a general covariance expression.}
 }
 \value{
 An object of class \code{svc}.
 }
 \description{
-Creates a variance component object as a function of model objects and (optionally) a relationship matrix.
+Creates a variance component object as a function of model
+objects and (optionally) a relationship matrix.
+
+\code{svc()} supports two complementary forms, chosen by whether \code{R} is
+supplied:
+
+\strong{Separable form (\code{R} supplied).} The term is declared as a
+Kronecker (separable) structure \eqn{\Sigma \otimes R}, where the
+expression \code{form} evaluates to the across-variable covariance
+\eqn{\Sigma} and \code{R} is a fixed across-individual relationship matrix.
+This is the simplest way to specify the common case of a separable
+covariance structure. Because the structure is declared, its sparsity
+pattern is known and fixed, so \strong{svcm} precomputes it and refills only
+the numeric values during optimization (see \code{Details}).
+
+\strong{General form (\code{R} omitted).} The term is an arbitrary
+expression evaluated each iteration, allowing more flexible covariance
+patterns that are not a single Kronecker product, for example
+\eqn{Z (G \otimes A) Z' + E \otimes I} with a design matrix \eqn{Z}. This
+form trades the precomputation of the separable form for full flexibility:
+the package makes no structural assumptions about the expression, so the
+covariance is rebuilt by direct summation each iteration. Both forms may be
+mixed in the same model.
+}
+\details{
+When \code{R} is supplied the term's Kronecker sparsity pattern is
+fixed and precomputed, so evaluation refills only numeric values. When every
+variance component in a model is of this separable form, \strong{svcm} also
+precomputes the fixed sparsity pattern of the marginal covariance
+\eqn{V = \sum_i \Sigma_i \otimes R_i} and reuses the symbolic Cholesky
+factorization across iterations. Models containing any general-form
+(\code{R = NULL}) term evaluate \eqn{V} by direct summation and refactorize
+each iteration; results are identical, only the computation is slower.
 }
 \examples{
 library(svcm)

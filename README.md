@@ -178,6 +178,33 @@ can be specified flexibly using general functions available in **R**.
 $\mathbf R_i$ describe dependence across individuals and must be sparse
 symmetric matrices with known values.
 
+### Two ways to specify a variance component
+
+`svc()` supports two complementary forms, so you can pick simplicity or
+flexibility per term:
+
+- **Separable form**, `svc(Sigma, R = R)`. Declares a Kronecker term
+  $\mathbf \Sigma_i \otimes \mathbf R_i$. This is the easy way to specify
+  the common case of a separable covariance structure: you give the
+  across-variable covariance $\mathbf \Sigma_i$ as an expression and the
+  across-individual relationship matrix $\mathbf R_i$ as a fixed sparse
+  matrix. Because the structure is declared, its sparsity pattern is known
+  and **svcm** precomputes it, refilling only numeric values while fitting.
+
+- **General form**, `svc(expr)` (no `R`). The term is an arbitrary
+  covariance expression evaluated each iteration. This permits patterns that
+  are not a single Kronecker product, for example
+  $\mathbf Z (\mathbf G \otimes \mathbf A) \mathbf Z' + \mathbf E \otimes \mathbf I$
+  with a design matrix $\mathbf Z$. It trades the precomputation of the
+  separable form for full flexibility: the package makes no structural
+  assumptions about the expression.
+
+Both forms may be mixed in a single model and give identical results; they
+differ only in how much structure **svcm** can exploit for speed. When every
+term is separable, **svcm** additionally precomputes the fixed sparsity
+pattern of the whole marginal covariance $\bf V$ and reuses the symbolic
+Cholesky factorization across iterations.
+
 The means are described with a similar structure
 
 $$
