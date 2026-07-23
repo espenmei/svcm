@@ -1,14 +1,10 @@
-svcm
-================
+**svcm** is an R package inteded for latent variable models that are assumed normally distributed so the
+marginal distribution of observed data can be specified directly. The covariance matrix can be described with sparse, fixed relationship matrices across individuals, and a structural equation model that involves unknown parameters that describe dependence across variables. The relationship matrix may, for example,
+encode genetic relatedness or different forms of shared environments and
+describe dependence across individuals. The interface is inspired by
+**OpenMx**, but uses the **Matrix** package for computation.svcm
 
-**svcm** is an R-package intended for (relatively) easy specification of
-models combining structural equation models with sparse relationship
-matrices. The structural equations model involve unknown parameters that
-describe dependence across variables. The relationship matrix may for
-example encode genetic relatedness or different forms of shared
-environments and describe dependence across individuals. The interface
-is inspired by **OpenMx**, but uses the **Matrix** package for
-computation.
+================
 
 ## An example
 
