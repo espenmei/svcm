@@ -48,6 +48,27 @@ print.mc <- function(x, ...) {
   invisible(x)
 }
 
+#' Print function for fe objects.
+#' @description Print function for fe (profiled fixed-effect) objects.
+#' @export
+#' @param x An object of type fe.
+#' @param ... Not used
+print.fe <- function(x, ...) {
+  cat("Profiled fixed effects (fe):\n")
+  dimX <- dim(x$X)
+  cat("\nDimension of X:\n")
+  cat(dimX[1], "x", dimX[2], "\n")
+  labs <- x$labels
+  if(is.null(labs)) {
+    labs <- colnames(x$X)
+  }
+  if(!is.null(labs)) {
+    cat("\nColumn labels:\n")
+    cat(paste(labs, collapse = ", "), "\n")
+  }
+  invisible(x)
+}
+
 #' Print function for summary.svcm
 #' @description Print function for summary.svcm objects.
 #' @export

@@ -32,7 +32,7 @@ with.svcm <- function(data, expr, ...) {
 #' @param ... Not used.
 summary.svcm <- function(object, ...) {
   .assert_fitted_svcm(object, "summary.svcm")
-  theta <- object$opt$par
+  theta <- coef(object)
   std_err <- rep(NA_real_, length(theta))
   if(!is.null(object$H)) {
     std_err <- sqrt(diag(vcov(object)))
@@ -64,7 +64,7 @@ logLik.svcm <- function(object, ...) {
   .assert_fitted_svcm(object, "logLik.svcm")
   ll <- -0.5 * object$opt$objective
   attr(ll, "nobs") <- length(object$dat$y)
-  attr(ll, "df") <- length(object$opt$par)
+  attr(ll, "df") <- length(object$opt$par) + length(object$beta)
   class(ll) <- "logLik"
   ll
 }
@@ -74,10 +74,16 @@ logLik.svcm <- function(object, ...) {
 #' @export
 #' @param object An object of type \code{svcm}.
 #' @param ... Not used.
-#' @return Vector of fitted parameters.
+#' @return Vector of fitted parameters. For models with profiled fixed effects
+#'   (\code{fe()}), the profiled coefficients are appended after the optimized
+#'   parameters.
 coef.svcm <- function(object, ...) {
   .assert_fitted_svcm(object, "coef.svcm")
-  object$opt$par
+  cf <- object$opt$par
+  if(!is.null(object$beta)) {
+    cf <- c(cf, object$beta)
+  }
+  cf
 }
 
 #' Returns covariance matrix of fitted model parameters.

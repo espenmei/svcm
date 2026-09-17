@@ -3,3 +3,4 @@
 ^packrat/
 ^\.Rprofile$
 ^scratch/
+^benchmark-fe-timing\.R$

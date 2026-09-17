@@ -113,12 +113,33 @@
 #' @param drop_miss drop expectation for missing values?
 #' @return vector of means.
 expected_mean <- function(mod, drop_miss = TRUE) {
-  Mm <- Reduce("+", lapply(mod$mcs, .compute, mod$env_comp))
-  M  <- as.vector(Mm) # vec(Mm) = vec(X %*% t(B))
+  if(length(mod$mcs) > 0) {
+    Mm <- Reduce("+", lapply(mod$mcs, .compute, mod$env_comp))
+    M  <- as.vector(Mm) # vec(Mm) = vec(X %*% t(B))
+  } else {
+    M <- numeric(length(mod$dat$keepy))
+  }
+  if(!is.null(mod$Dfull) && !is.null(mod$beta)) {
+    # Profiled fixed effects: add their (fitted) contribution to the mean.
+    M <- M + as.numeric(mod$Dfull %*% mod$beta)
+  }
   if(drop_miss) {
     M <- M[mod$dat$keepy]
   }
   return(M)
+}
+
+# Mean from ordinary mean components only (excludes profiled fixed effects),
+# restricted to observed entries. This is the residual base used by the
+# profiled objective, where the fixed-effect coefficients are the unknowns of
+# the GLS solve rather than an additive mean term.
+.mean_base <- function(mod) {
+  if(length(mod$mcs) > 0) {
+    M <- as.vector(Reduce("+", lapply(mod$mcs, .compute, mod$env_comp)))
+  } else {
+    M <- numeric(length(mod$dat$keepy))
+  }
+  M[mod$dat$keepy]
 }
 
 #' Model implied covariance matrix
@@ -391,6 +412,62 @@ svc <- function(form, R = NULL) {
   return(mod)
 }
 
+# Precompute the stacked design matrix D of all profiled fixed effects so the
+# objective can solve for their coefficients in closed form (GLS) each
+# iteration instead of optimizing over them.
+#
+# A term fe(X) contributes mu = X %*% t(B) to the mean (as .compute.fixedmc
+# does), i.e. vec(mu) = (I_nvar %x% X) vec(B). Each response variable gets its
+# own coefficient vector (no constraints across responses), so the term's
+# design block is I_nvar %x% X and its coefficients are ordered response-major.
+# Multiple fe() terms are column-bound into a single design.
+#
+# Stores on the model:
+#   Dfull       - the full (N*nvar)-row design matrix (unreduced),
+#   D           - Dfull restricted to observed rows (dat$keepy), used in objective,
+#   beta        - current coefficient estimates (named, zero until fitted),
+#   beta_labels - coefficient labels.
+.prepare_profile <- function(mod) {
+  if(length(mod$fes) == 0) {
+    return(mod)
+  }
+  Y    <- mod$dat$Y
+  nvar <- ncol(Y)
+  ynames <- colnames(Y)
+  if(is.null(ynames)) {
+    ynames <- paste0("y", seq_len(nvar))
+  }
+  Dblocks <- vector("list", length(mod$fes))
+  labs    <- vector("list", length(mod$fes))
+  for(i in seq_along(mod$fes)) {
+    X <- Matrix::Matrix(mod$fes[[i]]$X, sparse = FALSE)
+    k <- ncol(X)
+    xnames <- mod$fes[[i]]$labels
+    if(is.null(xnames)) {
+      xnames <- colnames(X)
+    }
+    if(is.null(xnames)) {
+      xnames <- paste0("x", seq_len(k))
+    }
+    # I_nvar %x% X: block-diagonal, response-major columns (response j owns
+    # columns (j-1)*k + 1:k). Row order matches the column-major stacking of Y.
+    Dblocks[[i]] <- Matrix::kronecker(Matrix::Diagonal(nvar), X)
+    # Labels ordered to match the columns: response (outer) then covariate (inner).
+    labs[[i]] <- as.vector(vapply(ynames,
+                                  function(y) paste0(y, ":", xnames),
+                                  character(k)))
+  }
+  Dfull <- do.call(cbind, Dblocks)
+  beta_labels <- make.unique(unlist(labs), sep = "_")
+  colnames(Dfull) <- beta_labels
+
+  mod$Dfull       <- Dfull
+  mod$D           <- Dfull[mod$dat$keepy, , drop = FALSE]
+  mod$beta_labels <- beta_labels
+  mod$beta        <- setNames(numeric(length(beta_labels)), beta_labels)
+  return(mod)
+}
+
 #' Constructor for mean component object
 #' @description Creates a mean component object used to define (part of) the mean structure in the model.
 #' @export
@@ -433,12 +510,49 @@ mc <- function(form, X = NULL) {
   .new_mc(form = form, class = "free")
 }
 
+#' Constructor for a profiled fixed-effect object
+#' @description Creates a set of linear fixed effects that are profiled out of
+#' the likelihood rather than optimized over. The coefficients enter the mean
+#' linearly through a supplied design matrix \code{X} and are recovered in closed
+#' form (generalized least squares) at each covariance evaluation, so they are
+#' not part of the parameter vector passed to \code{nlminb}.
+#'
+#' Unlike \code{mc()}, an \code{fe()} term carries no parameter matrix and admits
+#' no equality / fixed-value constraints: every column of \code{X} gets its own
+#' free coefficient, and (for multivariate responses) each response variable
+#' receives its own coefficient vector. Use \code{mc()} with a \code{pm()} if
+#' constraints across columns or responses are required.
+#' @export
+#' @param X A design matrix (\code{N} rows). A plain numeric vector is treated as
+#' a single column.
+#' @param labels Optional character vector of length \code{ncol(X)} naming the
+#' columns of \code{X}. Defaults to \code{colnames(X)}, or \code{x1, x2, ...}.
+#' @return An object of class \code{fe}.
+#' @examples
+#' library(svcm)
+#' X <- cbind(1, rnorm(100))
+#' fe(X, labels = c("intercept", "slope"))
+fe <- function(X, labels = NULL) {
+  if(is.null(dim(X))) {
+    X <- matrix(X, ncol = 1)
+  }
+  stopifnot(!anyNA(X))
+  if(!is.null(labels) && length(labels) != ncol(X)) {
+    stop("`labels` must have length ncol(X).")
+  }
+  rm <- Matrix::rankMatrix(X)
+  if(rm < ncol(X)) {
+    warning("The matrix X is not of full column rank.")
+  }
+  structure(list(X = X, labels = labels), class = "fe")
+}
+
 #' Creates a model
 #' @description Creates a new model
 #' @export
 #' @param Y Matrix of data described by model.
 #' @param ... All relevant model objects: \code{pm}, \code{svc}, \code{mc},
-#'   \code{ic}, and \code{const}.
+#'   \code{fe}, \code{ic}, and \code{const}.
 #'   Model expressions are evaluated in a strict environment: external objects
 #'   must be supplied via \code{const()}, and non-base functions should be
 #'   called with explicit namespaces (for example \code{Matrix::t()}).
@@ -505,10 +619,11 @@ svcm <- function(Y, ...) {
   pms    <- dots[sapply(dots, inherits, "pm")]
   svcs   <- dots[sapply(dots, inherits, "svc")]
   mcs    <- dots[sapply(dots, inherits, "mc")]
+  fes    <- dots[sapply(dots, inherits, "fe")]
   ics    <- dots[sapply(dots, inherits, "ic")]
   consts <- dots[sapply(dots, inherits, "const")]
-  if (length(pms) == 0 || length(svcs) == 0 || length(mcs) == 0) {
-    stop("At least one pm, svc and mc object must be supplied.")
+  if (length(pms) == 0 || length(svcs) == 0 || (length(mcs) == 0 && length(fes) == 0)) {
+    stop("At least one pm, one svc, and at least one mc or fe object must be supplied.")
   }
 
   # Keep model evaluation isolated from the caller/global environment.
@@ -519,6 +634,7 @@ svcm <- function(Y, ...) {
                         pms    = pms,
                         svcs   = svcs,
                         mcs    = mcs,
+                        fes    = fes,
                         ics    = ics,
                         consts = consts,
                         env_comp = new.env(parent = baseenv()),
@@ -537,6 +653,9 @@ svcm <- function(Y, ...) {
   # Precompute the symbolic Cholesky factorization so each objective evaluation
   # reuses the symbolic analysis and only redoes the numeric factorization.
   ret <- .prepare_chol(ret)
+  # Precompute the design matrix of any profiled fixed effects so the objective
+  # can solve for their coefficients in closed form each iteration.
+  ret <- .prepare_profile(ret)
   return(ret)
 }
 
@@ -616,6 +735,15 @@ fit_svcm <- function(mod, se = FALSE, ...) {
   }
   mod$opt <- fit
 
+  # Profiled fixed effects: recompute their coefficients at the optimum and
+  # store them so coef()/summary()/expected_mean() reflect the fitted values.
+  if(!is.null(mod$D)) {
+    update_model(mod, fit$par)
+    objective(mod) # stores .beta in env_comp at the optimum
+    mod$beta <- setNames(as.numeric(get(".beta", envir = mod$env_comp)),
+                         mod$beta_labels)
+  }
+
   # Hessian at minimum
   if(se) {
     message("Computing standard errors.")
@@ -635,22 +763,57 @@ fit_svcm <- function(mod, se = FALSE, ...) {
 #' @param mod An object of type \code{svcm}
 #' @return Twice negative log likelihood.
 objective <- function(mod) {
-  M <- expected_mean(mod)
   S <- expected_cov(mod)
-
-  r <- mod$dat$y - M
-  # Reuse the precomputed symbolic factorization when the covariance pattern
-  # is fixed, redoing only the numeric factorization. Fall back to a full
-  # factorization otherwise.
-  if(!is.null(mod$Lsym)) {
-    cS <- Matrix::update(mod$Lsym, Matrix::forceSymmetric(S), mult = 0)
-  } else {
-    cS <- Matrix::Cholesky(S)
-  }
-  iSr <- Matrix::solve(cS, r) # inv(S) %*% r
+  cS <- .chol_cov(mod, S)
   ld <- Matrix::determinant(cS, sqrt = FALSE)$modulus # logdet(S)
-  dev <- log(2 * pi) * length(r) + ld + sum(r * iSr)
+  n  <- length(mod$dat$y)
+
+  if(is.null(mod$D)) {
+    M <- expected_mean(mod)
+    r <- mod$dat$y - M
+    iSr <- Matrix::solve(cS, r) # inv(S) %*% r
+    quad <- sum(r * iSr)
+  } else {
+    # Profiled fixed effects: solve for their coefficients in closed form (GLS)
+    # given the current covariance, then evaluate the concentrated deviance.
+    r0 <- mod$dat$y - .mean_base(mod)
+    W  <- Matrix::solve(cS, mod$D)         # inv(S) %*% D
+    b0 <- Matrix::solve(cS, r0)            # inv(S) %*% r0
+    A  <- as.matrix(Matrix::crossprod(mod$D, W))   # t(D) %*% inv(S) %*% D
+    rhs <- as.numeric(Matrix::crossprod(mod$D, b0)) # t(D) %*% inv(S) %*% r0
+    beta <- solve(A, rhs)
+    assign(".beta", beta, envir = mod$env_comp)
+    iSr <- b0 - W %*% beta                 # inv(S) %*% (r0 - D beta)
+    r   <- r0 - as.numeric(mod$D %*% beta)
+    quad <- sum(r * iSr)
+  }
+  dev <- log(2 * pi) * n + ld + quad
   return(dev)
+}
+
+# Cholesky factorization of the model-implied covariance. Reuses the precomputed
+# symbolic factorization when the covariance pattern is fixed, redoing only the
+# numeric factorization; falls back to a full factorization otherwise.
+.chol_cov <- function(mod, S) {
+  if(!is.null(mod$Lsym)) {
+    Matrix::update(mod$Lsym, Matrix::forceSymmetric(S), mult = 0)
+  } else {
+    Matrix::Cholesky(S)
+  }
+}
+
+# Full (non-concentrated) deviance treating the profiled fixed-effect
+# coefficients beta as fixed. Used for the joint finite-difference Hessian at the
+# optimum, where beta = beta_hat so gradients w.r.t. beta vanish and the profiled
+# and full deviances coincide.
+.objective_full <- function(mod, beta) {
+  S <- expected_cov(mod)
+  cS <- .chol_cov(mod, S)
+  ld <- Matrix::determinant(cS, sqrt = FALSE)$modulus
+  r  <- mod$dat$y - .mean_base(mod) - as.numeric(mod$D %*% beta)
+  iSr <- Matrix::solve(cS, r)
+  n  <- length(r)
+  log(2 * pi) * n + ld + sum(r * iSr)
 }
 
 #' Compute hessian
@@ -662,8 +825,22 @@ objective <- function(mod) {
 fd_hess_svcm <- function(mod, ...) {
   # Work on a clone so finite differencing does not mutate the caller's model.
   mod <- .clone_model(mod)
-  H <- numDeriv::hessian(fit_objective, mod$opt$par, mod = mod)
-  pnms <- names(mod$opt$par)
+  if(is.null(mod$D)) {
+    H <- numDeriv::hessian(fit_objective, mod$opt$par, mod = mod)
+    pnms <- names(mod$opt$par)
+  } else {
+    # Joint Hessian over variance parameters and profiled coefficients at the
+    # optimum. beta = beta_hat here, so the full and profiled deviances agree.
+    th_v <- mod$opt$par
+    beta <- mod$beta
+    nv   <- length(th_v)
+    f <- function(p) {
+      update_model(mod, p[seq_len(nv)])
+      .objective_full(mod, p[nv + seq_along(beta)])
+    }
+    H <- numDeriv::hessian(f, c(th_v, beta))
+    pnms <- c(names(th_v), names(beta))
+  }
   dimnames(H) <- list(pnms, pnms)
   return(H)
 }

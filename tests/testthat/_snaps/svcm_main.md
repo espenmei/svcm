@@ -58,7 +58,7 @@
       svcm(d$Y, svc(P, R = d$R), mc(U, X = d$X))
     Condition
       Error in `svcm()`:
-      ! At least one pm, svc and mc object must be supplied.
+      ! At least one pm, one svc, and at least one mc or fe object must be supplied.
 
 # svcm() errors when svc is missing
 
@@ -66,7 +66,7 @@
       svcm(d$Y, d$P, d$U, mc(U, X = d$X))
     Condition
       Error in `svcm()`:
-      ! At least one pm, svc and mc object must be supplied.
+      ! At least one pm, one svc, and at least one mc or fe object must be supplied.
 
 # svcm() errors when mc is missing
 
@@ -74,5 +74,5 @@
       svcm(d$Y, d$P, d$U, svc(P, R = d$R))
     Condition
       Error in `svcm()`:
-      ! At least one pm, svc and mc object must be supplied.
+      ! At least one pm, one svc, and at least one mc or fe object must be supplied.
 

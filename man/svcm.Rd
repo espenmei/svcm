@@ -10,7 +10,7 @@ svcm(Y, ...)
 \item{Y}{Matrix of data described by model.}
 
 \item{...}{All relevant model objects: \code{pm}, \code{svc}, \code{mc},
-\code{ic}, and \code{const}.
+\code{fe}, \code{ic}, and \code{const}.
 Model expressions are evaluated in a strict environment: external objects
 must be supplied via \code{const()}, and non-base functions should be
 called with explicit namespaces (for example \code{Matrix::t()}).}

@@ -12,7 +12,9 @@
 \item{...}{Not used.}
 }
 \value{
-Vector of fitted parameters.
+Vector of fitted parameters. For models with profiled fixed effects
+  (\code{fe()}), the profiled coefficients are appended after the optimized
+  parameters.
 }
 \description{
 Returns fitted model parameters for \code{svcm} objects.

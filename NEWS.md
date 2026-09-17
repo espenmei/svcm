@@ -2,6 +2,15 @@
 
 ## New features
 
+* Added `fe()` for linear fixed effects that are *profiled* out of the
+  likelihood rather than optimized over. At each covariance evaluation the
+  coefficients are recovered in closed form (generalized least squares), so the
+  optimizer only works over the variance parameters. Each response variable gets
+  its own coefficient vector, and profiled coefficients are reported by `coef()`
+  / `summary()` and counted in the `logLik()` degrees of freedom, so a profiled
+  fit matches the equivalent explicit `pm()` + `mc()` model in log-likelihood,
+  parameter estimates, AIC/BIC, and standard errors.
+
 * Added precomputed sparsity templates for the marginal covariance matrix
   `V = sum_i V_i` when all variance components are fixed `svc(..., R=)` terms.
   This avoids repeated sparse pattern unions in `expected_cov()` by refilling
